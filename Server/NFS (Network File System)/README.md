@@ -1,22 +1,22 @@
-# 📁 NFS Server-Client Setup: Berbagi Folder Laravel `/var/www/be/public/storage`
+# 📁 NFS Server-Client Setup: Berbagi Folder Melalui Network File System
 
-Dokumentasi ini menjelaskan langkah-langkah konfigurasi NFS (Network File System) di Ubuntu untuk membagikan folder Laravel (`/var/www/be/public/storage`) dari **Server NFS** ke **Client NFS**. Folder tersebut akan dapat diakses dan ditulis oleh client.
-
----
-
-## 🧹 Topologi
-
-| Peran      | Hostname      | IP            |
-| ---------- | ------------- | ------------- |
-| NFS Server | `backend-a`   | `172.16.1.96` |
-| NFS Client | `webserver-a` | `172.16.1.95` |
-
-* **Folder dibagikan**: `/var/www/be/public/storage`
-* **Lokasi mount di client**: `/var/www/be/public/storage`
+Dokumentasi ini menjelaskan langkah-langkah konfigurasi NFS (Network File System) di Ubuntu untuk membagikan folder dari **Server NFS** ke **Client NFS**. Folder yang dibagikan akan dapat diakses dan ditulis oleh client, yang berguna untuk berbagai kebutuhan seperti berbagi file antar server, menyatukan storage, dan kebutuhan sinkronisasi data.
 
 ---
 
-## 🔧 1. Konfigurasi di Server (172.16.1.96 - NFS Server)
+## 🧹 Topologi Umum
+
+| Peran      | Contoh Hostname | Contoh IP      |
+| ---------- | --------------- | -------------- |
+| NFS Server | `server-nfs`    | `192.168.1.10` |
+| NFS Client | `client-nfs`    | `192.168.1.20` |
+
+* **Folder yang akan dibagikan (server)**: `/data/shared`
+* **Folder mount di client**: `/mnt/shared`
+
+---
+
+## 🔧 1. Konfigurasi di NFS Server
 
 ### ✅ Install NFS Server
 
@@ -27,35 +27,37 @@ sudo apt install nfs-kernel-server
 
 ---
 
-### ✅ Persiapan Folder Laravel
+### ✅ Siapkan Folder yang Akan Dibagikan
 
 ```bash
-php artisan storage:link
-sudo chown -R www-data:www-data /var/www/be/public/storage
-sudo chmod -R 755 /var/www/be/public/storage
+sudo mkdir -p /data/shared
+sudo chown -R nobody:nogroup /data/shared
+sudo chmod 755 /data/shared
 ```
+
+> Sesuaikan permission sesuai kebutuhan. Bisa diganti dengan user spesifik seperti `www-data` jika digunakan untuk web.
 
 ---
 
-### ✅ Konfigurasi Ekspor NFS
+### ✅ Konfigurasi File Ekspor
 
-Edit file konfigurasi:
+Edit file berikut:
 
 ```bash
 sudo nano /etc/exports
 ```
 
-Tambahkan baris berikut:
+Tambahkan:
 
 ```
-/var/www/be/public/storage 172.16.1.0/24(rw,sync,no_subtree_check,no_root_squash)
+/data/shared 192.168.1.0/24(rw,sync,no_subtree_check)
 ```
 
-> Catatan: `no_root_squash` mengizinkan client untuk menulis sebagai root. Gunakan dengan hati-hati.
+> Ganti `192.168.1.0/24` dengan subnet IP client Anda.
 
 ---
 
-### ✅ Terapkan Konfigurasi Ekspor
+### ✅ Terapkan Konfigurasi
 
 ```bash
 sudo exportfs -ra
@@ -63,16 +65,16 @@ sudo systemctl restart nfs-kernel-server
 showmount -e
 ```
 
-Output yang diharapkan:
+Output contoh:
 
 ```
-Export list for 172.16.1.96:
-/var/www/be/public/storage 172.16.1.0/24
+Export list for server-nfs:
+/data/shared 192.168.1.0/24
 ```
 
 ---
 
-## 💻 2. Konfigurasi di Client (172.16.1.95 - NFS Client)
+## 💻 2. Konfigurasi di NFS Client
 
 ### ✅ Install NFS Client
 
@@ -83,12 +85,10 @@ sudo apt install nfs-common
 
 ---
 
-### ✅ Buat Folder Mount Point
-
-> Kita akan mount ke folder yang sama seperti di server agar Laravel dapat langsung menggunakan hasil share.
+### ✅ Buat Folder untuk Mount Point
 
 ```bash
-sudo mkdir -p /var/www/be/public/storage
+sudo mkdir -p /mnt/shared
 ```
 
 ---
@@ -96,7 +96,7 @@ sudo mkdir -p /var/www/be/public/storage
 ### ✅ Mount Folder dari Server
 
 ```bash
-sudo mount -t nfs 172.16.1.96:/var/www/be/public/storage /var/www/be/public/storage
+sudo mount -t nfs 192.168.1.10:/data/shared /mnt/shared
 ```
 
 ---
@@ -104,11 +104,11 @@ sudo mount -t nfs 172.16.1.96:/var/www/be/public/storage /var/www/be/public/stor
 ### ✅ Verifikasi Akses
 
 ```bash
-ls -la /var/www/be/public/storage
-sudo touch /var/www/be/public/storage/test.txt
+ls -la /mnt/shared
+sudo touch /mnt/shared/test.txt
 ```
 
-Jika berhasil membuat file, berarti mount sukses dan dapat ditulis.
+Jika berhasil membuat file, berarti folder berhasil di-mount dan dapat ditulis.
 
 ---
 
@@ -120,13 +120,13 @@ Edit file `/etc/fstab`:
 sudo nano /etc/fstab
 ```
 
-Tambahkan baris berikut di akhir file:
+Tambahkan baris berikut:
 
 ```
-172.16.1.96:/var/www/be/public/storage /var/www/be/public/storage nfs defaults 0 0
+192.168.1.10:/data/shared /mnt/shared nfs defaults 0 0
 ```
 
-Simpan dan uji:
+Kemudian jalankan:
 
 ```bash
 sudo mount -a
@@ -134,8 +134,19 @@ sudo mount -a
 
 ---
 
-## ✅ Tips Tambahan
+## ✅ Tips dan Best Practice
 
-* Pastikan **permission** user Laravel (`www-data`) sama di kedua server (UID dan GID).
-* Jika menggunakan firewall, pastikan port **2049 (NFS)** terbuka.
-* Gunakan `no_root_squash` hanya untuk pengujian atau jika benar-benar diperlukan.
+* Gunakan subnet yang tepat di file `/etc/exports` untuk membatasi akses client.
+* Gunakan `rw,sync,no_subtree_check` sebagai opsi umum. Hindari `no_root_squash` kecuali benar-benar dibutuhkan.
+* Pastikan UID dan GID user yang mengakses sama di kedua server (misal `www-data` = UID 33).
+* Pastikan port **2049** terbuka jika menggunakan firewall.
+* Untuk keamanan lebih lanjut, pertimbangkan penggunaan firewall, VPN, atau IP whitelisting.
+
+---
+
+## 📚 Referensi Tambahan
+
+* [https://wiki.archlinux.org/title/NFS](https://wiki.archlinux.org/title/NFS)
+* [https://help.ubuntu.com/community/NFS](https://help.ubuntu.com/community/NFS)
+
+---
