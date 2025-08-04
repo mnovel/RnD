@@ -1,6 +1,6 @@
 # 📁 NFS Server-Client Setup: Berbagi Folder Melalui Network File System
 
-Dokumentasi ini menjelaskan langkah-langkah konfigurasi NFS (Network File System) di Ubuntu untuk membagikan folder dari **Server NFS** ke **Client NFS**. Folder yang dibagikan akan dapat diakses dan ditulis oleh client, yang berguna untuk berbagai kebutuhan seperti berbagi file antar server, menyatukan storage, dan kebutuhan sinkronisasi data.
+Dokumentasi ini menjelaskan langkah-langkah konfigurasi NFS (Network File System) di Ubuntu untuk membagikan folder dari **Server NFS** ke **Client NFS**.
 
 ---
 
@@ -16,18 +16,16 @@ Dokumentasi ini menjelaskan langkah-langkah konfigurasi NFS (Network File System
 
 ---
 
-## 🔧 1. Konfigurasi di NFS Server
+## 🔧 STEP 1: Konfigurasi di NFS Server
 
-### ✅ Install NFS Server
+### ✅ 1.1 Install NFS Server
 
 ```bash
 sudo apt update
 sudo apt install nfs-kernel-server
 ```
 
----
-
-### ✅ Siapkan Folder yang Akan Dibagikan
+### ✅ 1.2 Siapkan Folder yang Akan Dibagikan
 
 ```bash
 sudo mkdir -p /data/shared
@@ -35,13 +33,9 @@ sudo chown -R nobody:nogroup /data/shared
 sudo chmod 755 /data/shared
 ```
 
-> Sesuaikan permission sesuai kebutuhan. Bisa diganti dengan user spesifik seperti `www-data` jika digunakan untuk web.
+> Sesuaikan permission sesuai kebutuhan.
 
----
-
-### ✅ Konfigurasi File Ekspor
-
-Edit file berikut:
+### ✅ 1.3 Konfigurasi File Ekspor
 
 ```bash
 sudo nano /etc/exports
@@ -53,11 +47,7 @@ Tambahkan:
 /data/shared 192.168.1.0/24(rw,sync,no_subtree_check)
 ```
 
-> Ganti `192.168.1.0/24` dengan subnet IP client Anda.
-
----
-
-### ✅ Terapkan Konfigurasi
+### ✅ 1.4 Terapkan Konfigurasi
 
 ```bash
 sudo exportfs -ra
@@ -65,68 +55,53 @@ sudo systemctl restart nfs-kernel-server
 showmount -e
 ```
 
-Output contoh:
-
-```
-Export list for server-nfs:
-/data/shared 192.168.1.0/24
-```
-
 ---
 
-## 💻 2. Konfigurasi di NFS Client
+## 💻 STEP 2: Konfigurasi di NFS Client
 
-### ✅ Install NFS Client
+### ✅ 2.1 Install NFS Client
 
 ```bash
 sudo apt update
 sudo apt install nfs-common
 ```
 
----
-
-### ✅ Buat Folder untuk Mount Point
+### ✅ 2.2 Buat Folder untuk Mount Point
 
 ```bash
 sudo mkdir -p /mnt/shared
 ```
 
----
-
-### ✅ Mount Folder dari Server
+### ✅ 2.3 Mount Folder dari Server
 
 ```bash
 sudo mount -t nfs 192.168.1.10:/data/shared /mnt/shared
 ```
 
----
-
-### ✅ Verifikasi Akses
+### ✅ 2.4 Verifikasi Akses
 
 ```bash
 ls -la /mnt/shared
 sudo touch /mnt/shared/test.txt
 ```
 
-Jika berhasil membuat file, berarti folder berhasil di-mount dan dapat ditulis.
-
 ---
 
-### 🔁 (Opsional) Mount Otomatis Saat Booting
+## 🔁 STEP 3 (Opsional): Mount Otomatis Saat Booting
 
-Edit file `/etc/fstab`:
+### ✅ 3.1 Edit File `/etc/fstab`
 
 ```bash
 sudo nano /etc/fstab
 ```
 
-Tambahkan baris berikut:
+Tambahkan:
 
 ```
 192.168.1.10:/data/shared /mnt/shared nfs defaults 0 0
 ```
 
-Kemudian jalankan:
+### ✅ 3.2 Jalankan
 
 ```bash
 sudo mount -a
@@ -136,17 +111,16 @@ sudo mount -a
 
 ## ✅ Tips dan Best Practice
 
-* Gunakan subnet yang tepat di file `/etc/exports` untuk membatasi akses client.
-* Gunakan `rw,sync,no_subtree_check` sebagai opsi umum. Hindari `no_root_squash` kecuali benar-benar dibutuhkan.
-* Pastikan UID dan GID user yang mengakses sama di kedua server (misal `www-data` = UID 33).
-* Pastikan port **2049** terbuka jika menggunakan firewall.
-* Untuk keamanan lebih lanjut, pertimbangkan penggunaan firewall, VPN, atau IP whitelisting.
+- Gunakan subnet yang tepat di file `/etc/exports` untuk membatasi akses client.
+- Gunakan `rw,sync,no_subtree_check` sebagai opsi umum.
+- Hindari `no_root_squash` kecuali benar-benar dibutuhkan.
+- Pastikan UID dan GID user yang mengakses sama di kedua sisi (contoh: `www-data` = UID 33).
+- Pastikan port **2049** terbuka jika menggunakan firewall.
+- Untuk keamanan lebih lanjut, gunakan firewall, VPN, atau IP whitelisting.
 
 ---
 
 ## 📚 Referensi Tambahan
 
-* [https://wiki.archlinux.org/title/NFS](https://wiki.archlinux.org/title/NFS)
-* [https://help.ubuntu.com/community/NFS](https://help.ubuntu.com/community/NFS)
-
----
+- [https://wiki.archlinux.org/title/NFS](https://wiki.archlinux.org/title/NFS)
+- [https://help.ubuntu.com/community/NFS](https://help.ubuntu.com/community/NFS)
