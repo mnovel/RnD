@@ -1,161 +1,85 @@
-# 🔁 Rsync Documentation
+# 🚀 Rsync Installation Guide for Ubuntu 24.04
 
-`rsync` adalah alat baris perintah (CLI) yang digunakan untuk menyinkronkan dan mentransfer file atau direktori antara dua lokasi, baik secara lokal maupun melalui jaringan menggunakan protokol SSH.
+Complete documentation for installing and configuring rsync on Ubuntu 24.04 (Noble Numbat).
 
----
+## 🧰 Prerequisites
+- Ubuntu 24.04 LTS
+- User with sudo privileges
+- Active internet connection
 
-## ✨ Fitur Unggulan
-
-* Transfer data **cepat dan efisien**
-* Hanya mengirimkan **perubahan (delta)** file
-* Mendukung sinkronisasi **lokal dan remote**
-* Dapat mempertahankan **izin file, timestamp, dan symbolic links**
-* Kompatibel dengan **SSH untuk keamanan**
-
----
-
-## 📦 Instalasi
-
-### Ubuntu/Debian:
-
+## 🔄 STEP 1: System Update
 ```bash
-sudo apt update && sudo apt install rsync
+sudo apt update && sudo apt upgrade -y
 ```
 
-### CentOS/RHEL:
-
+## 📦 STEP 2: Rsync Installation
 ```bash
-sudo yum install rsync
+sudo apt install rsync -y
 ```
 
-### macOS:
-
+## ✅ STEP 3: Verify Installation
 ```bash
-brew install rsync
+rsync --version
+```
+Expected output:
+```
+rsync  version 3.2.7  protocol version 31
+...
 ```
 
----
-
-## 🧪 Sintaks Umum
-
+## ⚙️ STEP 4: Basic Configuration (Optional)
+### 4.1 Create rsync daemon configuration file:
 ```bash
-rsync [OPTION]... SRC [USER@]HOST:DEST
+sudo nano /etc/rsyncd.conf
 ```
 
-atau
-
-```bash
-rsync [OPTION]... [USER@]HOST:SRC DEST
+### 4.2 Basic configuration example:
+```ini
+[backup]
+    path = /path/to/backup
+    comment = Backup Directory
+    read only = no
+    list = yes
+    uid = root
+    gid = root
 ```
 
----
-
-## 🔍 Contoh Penggunaan
-
-### 1. 🔁 Sinkronisasi Lokal (Folder ke Folder)
-
+## 🚦 STEP 5: Run as Service (Optional)
 ```bash
-rsync -avh /source/folder/ /destination/folder/
+sudo systemctl enable rsync
+sudo systemctl start rsync
+sudo systemctl status rsync
 ```
 
-### 2. ☁️ Kirim File ke Remote Server
+## 🛠️ STEP 6: Common Rsync Commands
+| Command | Description |
+|---------|-------------|
+| `rsync -avz /source/ /destination/` | Local synchronization |
+| `rsync -avz -e ssh user@remote:/remote/dir/ /local/dir/` | Download from remote |
+| `rsync -avz -e ssh /local/dir/ user@remote:/remote/dir/` | Upload to remote |
+| `rsync -avz --delete /source/ /destination/` | Sync with deletion of extraneous files |
 
+## 🔍 STEP 7: Important Rsync Options
+| Option | Function |
+|--------|----------|
+| `-a` | Archive mode (preserve permissions) |
+| `-v` | Verbose output |
+| `-z` | Compression during transfer |
+| `-h` | Human-readable output |
+| `--progress` | Show transfer progress |
+| `--exclude` | Exclude specific files/directories |
+| `--delete` | Delete files in destination not present in source |
+
+## 🗑️ STEP 8: Uninstall Rsync
 ```bash
-rsync -avh /local/folder/ user@remote_ip:/remote/folder/
+sudo apt remove rsync -y
 ```
 
-### 3. 📅 Ambil File dari Remote Server
+## 📌 STEP 9: Troubleshooting
+- **Permission denied**: Ensure user has access to directories
+- **Connection refused**: Check if rsync daemon is running (`sudo systemctl status rsync`)
+- **SSH issues**: For remote transfers, verify SSH is working properly
 
-```bash
-rsync -avh user@remote_ip:/remote/folder/ /local/folder/
-```
-
-### 4. 🔐 Gunakan Port SSH Khusus
-
-```bash
-rsync -avh -e "ssh -p 2222" /local/folder/ user@remote_ip:/remote/folder/
-```
-
----
-
-## ⚙️ Opsi yang Sering Digunakan
-
-| Opsi                  | Keterangan                                    |
-| --------------------- | --------------------------------------------- |
-| `-a`                  | Archive: sync recursive, izin, waktu, symlink |
-| `-v`                  | Verbose: tampilkan proses                     |
-| `-h`                  | Human-readable: ukuran file mudah dibaca      |
-| `-z`                  | Kompresi data selama transfer                 |
-| `--delete`            | Hapus file di tujuan yang tidak ada di sumber |
-| `--progress`          | Tampilkan progress setiap file                |
-| `--exclude='pattern'` | Mengecualikan file atau folder tertentu       |
-
----
-
-## 🕒 Automasi via Cron
-
-### Edit crontab:
-
-```bash
-crontab -e
-```
-
-### Contoh: Backup harian pukul 1 pagi
-
-```bash
-0 1 * * * rsync -avh /source/folder/ /backup/folder/ >> /var/log/rsync.log 2>&1
-```
-
----
-
-## 📌 Tips Penting
-
-* Akhiri path sumber dengan `/` untuk **menyalin isi folder**, tanpa `/` untuk **menyalin folder itu sendiri**.
-* Gunakan SSH key agar proses otomatis tidak memerlukan password.
-* Selalu uji coba `rsync` tanpa `--delete` terlebih dahulu untuk menghindari kehilangan data.
-
----
-
-## 🔐 SSH Key Setup (Opsional)
-
-### Di client (server yang menarik data):
-
-```bash
-ssh-keygen -t rsa
-ssh-copy-id -p 234 user@remote_ip
-```
-
-Ini memungkinkan `rsync` dijalankan tanpa perlu memasukkan password SSH.
-
----
-
-## 🧠 Contoh Nyata
-
-### Backup Website ke NAS:
-
-```bash
-rsync -avzh /var/www/html/ /mnt/nas/backup/html/
-```
-
-### Sinkronisasi Server Produksi ke Server Backup:
-
-```bash
-rsync -avh -e "ssh -p 2222" user@prod-server:/data/ /data/backup/
-```
-
----
-
-## 📚 Referensi
-
-* [Rsync Manual](https://man7.org/linux/man-pages/man1/rsync.1.html)
-* [Explained: Rsync Basics](https://explainshell.com/explain?cmd=rsync+-avh)
-
----
-
-## 🛡️ Disclaimer
-
-Gunakan `--delete` dengan hati-hati! Selalu lakukan dry-run terlebih dahulu:
-
-```bash
-rsync -avhn --delete source/ destination/
-```
+## 🔗 References
+- Manual page: `man rsync`
+- Ubuntu documentation: https://help.ubuntu.com/community/rsync
