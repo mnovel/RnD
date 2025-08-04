@@ -1,132 +1,125 @@
-# 📦 Instalasi MySQL di Ubuntu Server 24.04
+# 🗄️ Panduan Instalasi MySQL di Ubuntu 24.04
 
-Dokumentasi ini menjelaskan langkah-langkah untuk menginstal dan mengamankan MySQL di Ubuntu Server 24.04 LTS.
-
-## 🛠️ Prasyarat
-
-- Ubuntu Server 24.04 LTS
-- Akses root atau sudo
+Dokumentasi lengkap untuk menginstal dan mengamankan MySQL server di Ubuntu 24.04 (Noble Numbat).
 
 ---
 
-## 🔧 Langkah Instalasi
+## 🧰 Prasyarat
+- Ubuntu 24.04 LTS
+- Akses user dengan hak `sudo`
+- Koneksi internet aktif
+- Disarankan minimal 2GB RAM untuk server produksi
 
-### 1. Perbarui Sistem
+---
 
+## 🔄 STEP 1: Update Sistem
 ```bash
 sudo apt update && sudo apt upgrade -y
 ```
 
-### 2. Instal MySQL Server
+---
 
+## 📦 STEP 2: Instalasi MySQL Server
 ```bash
 sudo apt install mysql-server -y
 ```
 
-### 3. Cek Status Layanan MySQL
+---
 
+## ✅ STEP 3: Verifikasi Instalasi
 ```bash
 sudo systemctl status mysql
 ```
-
-Jika aktif, output akan menunjukkan status: `active (running)`.
+Output yang diharapkan:
+```
+● mysql.service - MySQL Community Server
+     Loaded: loaded (/lib/systemd/system/mysql.service; enabled; vendor preset: enabled)
+     Active: active (running) since ...
+```
 
 ---
 
-## 🔐 Konfigurasi Keamanan
-
-### 4. Jalankan `mysql_secure_installation`
-
+## 🔐 STEP 4: Konfigurasi Keamanan
+Jalankan skrip pengamanan:
 ```bash
 sudo mysql_secure_installation
 ```
 
-Ikuti prompt berikut:
-- Atur validasi kata sandi: **Yes** (opsional)
-- Masukkan root password: **Isi jika diminta**
-- Hapus pengguna anonim: **Yes**
-- Nonaktifkan login root dari remote: **Yes**
+Ikuti pengaturan berikut:
+- Validasi password: **Yes** (opsional)
+- Hapus user anonymous: **Yes**
+- Nonaktifkan login root remote: **Yes**
 - Hapus database test: **Yes**
-- Muat ulang tabel privilege: **Yes**
+- Muat ulang privilege tables: **Yes**
 
 ---
 
-## 🔑 Akses MySQL
-
-### 5. Masuk ke MySQL CLI
-
+## 🔑 STEP 5: Akses MySQL
+### 5.1 Login ke MySQL
 ```bash
-sudo mysql
+sudo mysql -u root -p
 ```
 
-### 6. (Opsional) Buat User Baru dan Database
-
+### 5.2 Contoh buat user dan database baru:
 ```sql
-CREATE DATABASE namadb;
-CREATE USER 'namauser'@'localhost' IDENTIFIED BY 'passwordku';
-GRANT ALL PRIVILEGES ON namadb.* TO 'namauser'@'localhost';
+CREATE DATABASE contohdb;
+CREATE USER 'contohuser'@'localhost' IDENTIFIED BY 'PasswordKuat123!';
+GRANT ALL PRIVILEGES ON contohdb.* TO 'contohuser'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
 ```
 
 ---
 
-## 🔍 Verifikasi Instalasi
-
-### 7. Cek Versi MySQL
-
-```bash
-mysql --version
-```
-
-### 8. Tes Koneksi
-
-```bash
-mysql -u root -p
-```
-
----
-
-## 🧱 Konfigurasi Tambahan (Opsional)
-
-### Mengizinkan Akses Remote ke MySQL
-
-1. Edit file konfigurasi:
-
+## 🌐 STEP 6: Konfigurasi Akses Remote (Opsional)
+### 6.1 Edit file konfigurasi:
 ```bash
 sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf
 ```
-
-2. Ubah `bind-address` dari:
-
+Ubah:
 ```ini
 bind-address = 127.0.0.1
 ```
-
 Menjadi:
-
 ```ini
 bind-address = 0.0.0.0
 ```
 
-3. Restart MySQL:
-
-```bash
-sudo systemctl restart mysql
-```
-
-4. Tambahkan user remote di MySQL:
-
+### 6.2 Buat user remote:
 ```sql
-CREATE USER 'remoteuser'@'%' IDENTIFIED BY 'passwordku';
+CREATE USER 'remoteuser'@'%' IDENTIFIED BY 'PasswordRemote456!';
 GRANT ALL PRIVILEGES ON *.* TO 'remoteuser'@'%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 ```
 
+### 6.3 Restart MySQL:
+```bash
+sudo systemctl restart mysql
+```
+
 ---
 
-## 🧼 Uninstall (Jika Diperlukan)
+## 🛠️ STEP 7: Perintah MySQL Penting
+| Perintah | Deskripsi |
+|----------|-----------|
+| `sudo systemctl start mysql` | Mulai layanan MySQL |
+| `sudo systemctl stop mysql` | Hentikan layanan MySQL |
+| `sudo systemctl restart mysql` | Restart layanan MySQL |
+| `mysql -u [user] -p` | Login ke MySQL CLI |
+| `SHOW DATABASES;` | Tampilkan semua database |
+| `CREATE DATABASE nama_db;` | Buat database baru |
 
+---
+
+## ⚠️ STEP 8: Keamanan Tambahan
+1. Selalu gunakan password yang kuat
+2. Batasi akses remote hanya dari IP tertentu
+3. Pertimbangkan menggunakan SSH tunneling
+4. Update MySQL secara berkala
+
+---
+
+## 🗑️ STEP 9: Uninstall MySQL
 ```bash
 sudo apt remove --purge mysql-server mysql-client mysql-common -y
 sudo apt autoremove -y
@@ -136,15 +129,14 @@ sudo rm -rf /etc/mysql /var/lib/mysql
 
 ---
 
-## 📚 Referensi
-
-- [MySQL Official Documentation](https://dev.mysql.com/doc/)
-- [Ubuntu Community Help Wiki](https://help.ubuntu.com/community/MySQL)
+## 🆘 Troubleshooting
+- **Gagal start**: Cek log dengan `sudo journalctl -u mysql.service`
+- **Login gagal**: Verifikasi password dengan `sudo mysql -u root`
+- **Port tertutup**: Buka port 3306 di firewall `sudo ufw allow 3306`
 
 ---
 
-## 🧑‍💻 Author
-
-**Nama**: Novel  
-**Role**: DevOps | SysAdmin | Cybersecurity  
-**Organization**: RSUD Dr. R Soedarsono
+## 📚 Referensi
+- [Dokumentasi Resmi MySQL](https://dev.mysql.com/doc/)
+- [Panduan Ubuntu MySQL](https://ubuntu.com/server/docs/databases-mysql)
+- [Best Practices Keamanan MySQL](https://dev.mysql.com/doc/refman/8.0/en/security.html)
