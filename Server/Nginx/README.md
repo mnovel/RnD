@@ -6,13 +6,13 @@ Dokumentasi ini mencakup langkah-langkah instalasi dan konfigurasi Nginx, PHP, s
 
 ## 🧰 Prasyarat
 
-* Ubuntu 24.04 LTS
-* Akses user dengan hak `sudo`
-* Koneksi internet aktif
+- Ubuntu 24.04 LTS
+- Akses user dengan hak `sudo`
+- Koneksi internet aktif
 
 ---
 
-## 🌐 Langkah 1: Instalasi Nginx
+## 🌐 STEP 1: Instalasi Nginx
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -22,7 +22,7 @@ sudo systemctl start nginx
 sudo systemctl status nginx
 ```
 
-### 🔓 Buka akses firewall (opsional jika UFW aktif)
+### 🔓 1.1 Buka akses firewall (opsional jika UFW aktif)
 
 ```bash
 sudo ufw allow 'Nginx Full'
@@ -30,7 +30,7 @@ sudo ufw allow 'Nginx Full'
 
 ---
 
-## 🐘 Langkah 2: Instalasi PHP dan Ekstensi Umum
+## 🐘 STEP 2: Instalasi PHP dan Ekstensi Umum
 
 ```bash
 sudo apt install php php-cli php-fpm php-common php-mysql php-pgsql php-sqlite3 \
@@ -40,7 +40,9 @@ php-opcache php-tokenizer php-ctype php-dom php-fileinfo php-exif php-pdo -y
 
 > 💡 Secara default, Ubuntu 24.04 menggunakan PHP 8.3.
 
-### 📦 Daftar Ekstensi PHP Umum
+---
+
+## 📦 STEP 3: Daftar Ekstensi PHP Umum
 
 | Ekstensi      | Fungsi                                         |
 | ------------- | ---------------------------------------------- |
@@ -68,15 +70,15 @@ php-opcache php-tokenizer php-ctype php-dom php-fileinfo php-exif php-pdo -y
 
 ---
 
-## 🔧 Langkah 3: Konfigurasi Nginx agar Bisa Jalankan PHP
+## 🔧 STEP 4: Konfigurasi Nginx agar Bisa Jalankan PHP
 
-Edit konfigurasi default Nginx:
+### 4.1 Edit konfigurasi default Nginx:
 
 ```bash
 sudo nano /etc/nginx/sites-available/default
 ```
 
-### Contoh konfigurasi `server` block:
+### 4.2 Contoh konfigurasi `server` block:
 
 ```nginx
 server {
@@ -105,7 +107,7 @@ server {
 
 ---
 
-## 🔁 Restart Service
+## 🔁 STEP 5: Restart Service
 
 ```bash
 sudo systemctl reload nginx
@@ -114,25 +116,23 @@ sudo systemctl restart php8.3-fpm
 
 ---
 
-## 🧪 Langkah 4: Pengujian
+## 🧪 STEP 6: Pengujian
 
-### Buat file uji `info.php`
+### 6.1 Buat file uji `info.php`
 
 ```bash
 echo "<?php phpinfo();" | sudo tee /var/www/html/info.php
 ```
 
-### Akses via browser:
+### 6.2 Akses via browser:
 
 ```
 http://<ip-server>/info.php
 ```
 
-Jika muncul tampilan informasi PHP, berarti server telah terkonfigurasi dengan benar.
-
 ---
 
-## 🗑️ Uninstall PHP (jika perlu)
+## 🗑️ STEP 7: Uninstall PHP (Jika Perlu)
 
 ```bash
 sudo apt remove --purge php* -y
@@ -141,9 +141,9 @@ sudo apt autoremove -y
 
 ---
 
-## 📌 Catatan Tambahan
+## 📌 STEP 8: Catatan Tambahan
 
-* Untuk versi PHP lainnya, gunakan PPA:
+- Untuk versi PHP lainnya, gunakan PPA:
 
 ```bash
 sudo add-apt-repository ppa:ondrej/php
