@@ -1,126 +1,159 @@
-# 📁 NFS Server-Client Setup: Berbagi Folder Melalui Network File System
+# 📁 Panduan Konfigurasi NFS di Ubuntu 24.04
 
-Dokumentasi ini menjelaskan langkah-langkah konfigurasi NFS (Network File System) di Ubuntu untuk membagikan folder dari **Server NFS** ke **Client NFS**.
-
----
-
-## 🧹 Topologi Umum
-
-| Peran      | Contoh Hostname | Contoh IP      |
-| ---------- | --------------- | -------------- |
-| NFS Server | `server-nfs`    | `192.168.1.10` |
-| NFS Client | `client-nfs`    | `192.168.1.20` |
-
-* **Folder yang akan dibagikan (server)**: `/data/shared`
-* **Folder mount di client**: `/mnt/shared`
+Dokumentasi lengkap untuk membagikan folder antara server dan client menggunakan Network File System (NFS).
 
 ---
 
-## 🔧 STEP 1: Konfigurasi di NFS Server
+## 🧰 Prasyarat
+- Ubuntu 24.04 LTS di server dan client
+- Akses user dengan hak `sudo` di kedua sisi
+- Koneksi jaringan yang stabil
+- Firewall mengizinkan traffic NFS (port 2049)
 
-### ✅ 1.1 Install NFS Server
+---
 
+## 🌐 Topologi Jaringan
+| Peran       | Contoh Hostname | Contoh IP       |
+|-------------|-----------------|-----------------|
+| **NFS Server** | `server-nfs`    | `192.168.1.10`  |
+| **NFS Client** | `client-nfs`    | `192.168.1.20`  |
+
+*Folder yang dibagikan*: `/data/shared`  
+*Mount point client*: `/mnt/shared`
+
+---
+
+## 🖥️ STEP 1: Konfigurasi NFS Server
+
+### 1.1 Install Paket NFS Server
 ```bash
 sudo apt update
-sudo apt install nfs-kernel-server
+sudo apt install nfs-kernel-server -y
 ```
 
-### ✅ 1.2 Siapkan Folder yang Akan Dibagikan
-
+### 1.2 Siapkan Direktori Shared
 ```bash
 sudo mkdir -p /data/shared
-sudo chown -R nobody:nogroup /data/shared
+sudo chown nobody:nogroup /data/shared
 sudo chmod 755 /data/shared
 ```
 
-> Sesuaikan permission sesuai kebutuhan.
-
-### ✅ 1.3 Konfigurasi File Ekspor
-
+### 1.3 Konfigurasi Ekspor
 ```bash
 sudo nano /etc/exports
 ```
-
 Tambahkan:
-
 ```
 /data/shared 192.168.1.0/24(rw,sync,no_subtree_check)
 ```
 
-### ✅ 1.4 Terapkan Konfigurasi
-
+### 1.4 Terapkan Konfigurasi
 ```bash
-sudo exportfs -ra
+sudo exportfs -a
 sudo systemctl restart nfs-kernel-server
-showmount -e
+sudo systemctl enable nfs-kernel-server
 ```
 
 ---
 
-## 💻 STEP 2: Konfigurasi di NFS Client
+## 💻 STEP 2: Konfigurasi NFS Client
 
-### ✅ 2.1 Install NFS Client
-
+### 2.1 Install Paket NFS Client
 ```bash
 sudo apt update
-sudo apt install nfs-common
+sudo apt install nfs-common -y
 ```
 
-### ✅ 2.2 Buat Folder untuk Mount Point
-
+### 2.2 Buat Mount Point
 ```bash
 sudo mkdir -p /mnt/shared
 ```
 
-### ✅ 2.3 Mount Folder dari Server
-
+### 2.3 Mount Manual
 ```bash
-sudo mount -t nfs 192.168.1.10:/data/shared /mnt/shared
+sudo mount 192.168.1.10:/data/shared /mnt/shared
 ```
 
-### ✅ 2.4 Verifikasi Akses
-
+### 2.4 Verifikasi
 ```bash
-ls -la /mnt/shared
-sudo touch /mnt/shared/test.txt
+ls -l /mnt/shared
+sudo touch /mnt/shared/testfile
 ```
 
 ---
 
-## 🔁 STEP 3 (Opsional): Mount Otomatis Saat Booting
+## 🔄 STEP 3: Mount Otomatis (Opsional)
 
-### ✅ 3.1 Edit File `/etc/fstab`
-
+### 3.1 Edit File fstab
 ```bash
 sudo nano /etc/fstab
 ```
-
 Tambahkan:
-
 ```
-192.168.1.10:/data/shared /mnt/shared nfs defaults 0 0
+192.168.1.10:/data/shared  /mnt/shared  nfs  defaults  0  0
 ```
 
-### ✅ 3.2 Jalankan
-
+### 3.2 Test Konfigurasi
 ```bash
 sudo mount -a
 ```
 
 ---
 
-## ✅ Tips dan Best Practice
+## ⚙️ STEP 4: Opsi Konfigurasi NFS
 
-- Gunakan subnet yang tepat di file `/etc/exports` untuk membatasi akses client.
-- Gunakan `rw,sync,no_subtree_check` sebagai opsi umum.
-- Hindari `no_root_squash` kecuali benar-benar dibutuhkan.
-- Pastikan UID dan GID user yang mengakses sama di kedua sisi (contoh: `www-data` = UID 33).
-- Pastikan port **2049** terbuka jika menggunakan firewall.
-- Untuk keamanan lebih lanjut, gunakan firewall, VPN, atau IP whitelisting.
+| Opsi               | Deskripsi                                                                 |
+|--------------------|---------------------------------------------------------------------------|
+| `rw`               | Read-write access                                                        |
+| `ro`               | Read-only access                                                         |
+| `sync`             | Write changes synchronously                                              |
+| `async`            | Write changes asynchronously                                             |
+| `no_subtree_check` | Meningkatkan performa dengan menonaktifkan subtree checking             |
+| `no_root_squash`   | Mempertahankan privilege root (hati-hati, risiko keamanan)               |
 
 ---
 
-## 📚 Referensi Tambahan
+## 🔐 STEP 5: Keamanan NFS
 
-- [https://wiki.archlinux.org/title/NFS](https://wiki.archlinux.org/title/NFS)
-- [https://help.ubuntu.com/community/NFS](https://help.ubuntu.com/community/NFS)
+1. Selalu gunakan subnet spesifik di `/etc/exports`
+2. Pertimbangkan menggunakan VPN untuk koneksi remote
+3. Batasi akses dengan firewall:
+   ```bash
+   sudo ufw allow from 192.168.1.0/24 to any port nfs
+   ```
+4. Monitor akses dengan:
+   ```bash
+   sudo nfsstat -s
+   ```
+
+---
+
+## 🗑️ STEP 6: Uninstall NFS
+
+### Di Server:
+```bash
+sudo systemctl stop nfs-kernel-server
+sudo apt remove --purge nfs-kernel-server -y
+```
+
+### Di Client:
+```bash
+sudo umount /mnt/shared
+sudo apt remove --purge nfs-common -y
+```
+
+---
+
+## 🆘 Troubleshooting
+
+- **Gagal mount**: Cek koneksi jaringan dan konfigurasi `/etc/exports`
+- **Permission denied**: Verifikasi ownership folder dan opsi export
+- **Slow performance**: Pertimbangkan opsi `async` untuk workload tertentu
+- **Port blocked**: Pastikan port 2049 terbuka di firewall
+
+---
+
+## 📚 Referensi
+- [Ubuntu NFS Documentation](https://ubuntu.com/server/docs/service-nfs)
+- [NFS Best Practices](https://help.ubuntu.com/community/NFSv4Howto)
+- [NFS Security Guide](https://linux.die.net/man/5/exports)
