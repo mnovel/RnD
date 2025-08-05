@@ -83,21 +83,39 @@ sudo nano /etc/nginx/sites-available/default
 ```nginx
 server {
     listen 80 default_server;
-    root /var/www/html;
-    index index.php index.html index.htm;
-
+    listen [::]:80 default_server;
     server_name _;
 
+    set_real_ip_from 10.10.1.0/24;
+    real_ip_header X-Forwarded-For;
+    real_ip_recursive on;
+
+    root /var/www/html;
+    index index.php index.html;
+
+    # === Handle Authorization Header ===
     location / {
         try_files $uri $uri/ =404;
     }
 
+    # === PHP Processing (index.php Front Controller) ===
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+
+        # Pass Authorization Header
+        fastcgi_param HTTP_AUTHORIZATION $http_authorization;
     }
 
+    # === Security: Deny Access to .htaccess ===
     location ~ /\.ht {
+        deny all;
+    }
+
+    # === Optional: Deny Access to Hidden Files ===
+    location ~ /\.(?!well-known).* {
         deny all;
     }
 }
