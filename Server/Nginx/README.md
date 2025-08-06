@@ -80,141 +80,124 @@ sudo nano /etc/nginx/sites-available/default
 
 ### 4.2 Contoh konfigurasi `server` block:
 
-Config NGINX Untuk CodeIgniter
+Config NGINX Untuk PHP
 ```nginx
 server {
+    # ======================
+    # BASIC SERVER CONFIGURATION (SAMA UNTUK KEDUANYA)
+    # ======================
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name _;
-
-    # Real IP Configuration
-    set_real_ip_from 10.10.1.0/24;
-    real_ip_header X-Forwarded-For;
-    real_ip_recursive on;
-
-    # Basic Directives
-    root /var/www/html;
-    index index.php index.html;
     
-    # Security Headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), fullscreen=(self)" always;
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'self'; base-uri 'self';" always;
-
-    # CodeIgniter URL Rewrite
-    location / {
-        try_files $uri $uri/ /index.php$is_args$args;
-    }
-
-    # PHP Handler
-    location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/run/php/php8.1-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        fastcgi_param PATH_INFO $fastcgi_path_info;
-        include fastcgi_params;
-        
-        # Security for PHP files
-        fastcgi_param HTTP_AUTHORIZATION $http_authorization;
-        fastcgi_hide_header X-Powered-By;
-
-        # Performance tweaks
-        fastcgi_buffer_size 128k;
-        fastcgi_buffers 256 16k;
-        fastcgi_busy_buffers_size 256k;
-    }
-
-    # Security: Block Sensitive Files
-    location ~* ^/(\.env|composer\.(json|lock)|config/|system/) {
-        deny all;
-        return 403;
-    }
-
-    # Security: Block Hidden Files
-    location ~ /\.(?!well-known) {
-        deny all;
-        access_log off;
-        log_not_found off;
-    }
-
-    # Static Files Caching
-    location ~* \.(?:jpg|jpeg|png|gif|ico|css|js|woff2|woff|ttf|svg|webp)$ {
-        expires 365d;
-        add_header Cache-Control "public, immutable";
-        access_log off;
-        try_files $uri =404;
-    }
-}
-```
-Config NGINX Untuk Laravel
-```nginx
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name _;
-
-    # Real IP Configuration
+    # Real IP configuration (konsisten)
     set_real_ip_from 10.10.1.0/24;
     real_ip_header X-Forwarded-For;
     real_ip_recursive on;
-
-    # Basic Directives
-    root /var/www/laravel/public;
-    index index.php index.html;
-
-    # Security Headers
+    
+    # ======================
+    # SECURITY HEADERS (KONSISTEN)
+    # ======================
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), fullscreen=(self)" always;
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'self'; base-uri 'self';" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'self';" always;
 
-    # Laravel URL Rewrite
+    # ======================
+    # FRAMEWORK-SPECIFIC CONFIG
+    # ======================
+    # Untuk Laravel
+    # root /var/www/laravel/public;
+    # index index.php index.html;
+    
+    # Untuk CodeIgniter
+    root /var/www/codeigniter;
+    index index.php index.html;
+
+    # ======================
+    # ROUTING RULES
+    # ======================
     location / {
-        try_files $uri $uri/ /index.php$is_args$args;
+        # Untuk Laravel:
+        # try_files $uri $uri/ /index.php$is_args$args;
+        
+        # Untuk CodeIgniter:
+        try_files $uri $uri/ /index.php?$query_string;
     }
 
-    # PHP Handler
+    # ======================
+    # PHP HANDLER (KONSISTEN)
+    # ======================
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/run/php/php8.3-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        fastcgi_param DOCUMENT_ROOT $realpath_root;
-        include fastcgi_params;
         
-        # Laravel-specific headers
-        fastcgi_param HTTP_AUTHORIZATION $http_authorization;
+        # Untuk Laravel:
+        # fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        # fastcgi_param DOCUMENT_ROOT $realpath_root;
+        
+        # Untuk CodeIgniter:
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+        
+        include fastcgi_params;
         fastcgi_hide_header X-Powered-By;
         
-        # Performance tweaks
+        # Performance settings (konsisten)
         fastcgi_buffer_size 128k;
-        fastcgi_buffers 256 16k;
+        fastcgi_buffers 4 256k;
         fastcgi_busy_buffers_size 256k;
     }
 
-    # Security: Block Sensitive Files
-    location ~* ^/(\.env|\.git|storage/logs|bootstrap/cache|config/|database/) {
+    # ======================
+    # SECURITY RESTRICTIONS (KONSISTEN)
+    # ======================
+    # Blokir file/direktori sensitif framework
+    location ~* ^/(\.env|\.git|storage/logs|bootstrap/cache|config/|database/|application|system|tests|composer\.(json|lock)) {
         deny all;
         return 403;
     }
 
-    # Security: Block Hidden Files
+    # Blokir ekstensi file berbahaya
+    location ~* \.(engine|inc|info|install|module|profile|test|po|sh|.*sql|theme|tpl(\.php)?|xtmpl|sw[op]|xmlrpc)$ {
+        deny all;
+        return 403;
+    }
+
+    # Blokir file hidden kecuali .well-known
     location ~ /\.(?!well-known) {
         deny all;
         access_log off;
         log_not_found off;
     }
 
-    # Static Files Caching
-    location ~* \.(?:jpg|jpeg|png|gif|ico|css|js|woff2|woff|ttf|svg|webp)$ {
+    # ======================
+    # STATIC FILES CACHING (KONSISTEN)
+    # ======================
+    location ~* \.(?:ico|css|js|gif|jpe?g|png|svg|webp|woff2?|ttf|eot)$ {
         expires 365d;
         add_header Cache-Control "public, immutable";
         access_log off;
         try_files $uri =404;
+    }
+
+    # ======================
+    # MISC CONFIG (KONSISTEN)
+    # ======================
+    client_max_body_size 100M;
+    keepalive_timeout 15;
+    
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+    }
+    
+    location = /robots.txt {
+        log_not_found off;
+        access_log off;
     }
 }
 ```
