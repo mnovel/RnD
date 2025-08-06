@@ -58,6 +58,7 @@ sudo systemctl status rsync
 | `rsync -avz -e ssh user@remote:/remote/dir/ /local/dir/` | Download from remote |
 | `rsync -avz -e ssh /local/dir/ user@remote:/remote/dir/` | Upload to remote |
 | `rsync -avz --delete /source/ /destination/` | Sync with deletion of extraneous files |
+| `rsync -avz --dry-run --delete -e ssh /source/ /destination/` | Dry-run remote sync with deletion preview |
 
 ## 🔍 STEP 7: Important Rsync Options
 | Option | Function |
@@ -69,6 +70,7 @@ sudo systemctl status rsync
 | `--progress` | Show transfer progress |
 | `--exclude` | Exclude specific files/directories |
 | `--delete` | Delete files in destination not present in source |
+| `--dry-run` | Simulation mode (no real changes) |
 
 ## 🗑️ STEP 8: Uninstall Rsync
 ```bash
