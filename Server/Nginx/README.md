@@ -84,19 +84,19 @@ Config NGINX Untuk PHP
 ```nginx
 server {
     # ======================
-    # BASIC SERVER CONFIGURATION (SAMA UNTUK KEDUANYA)
+    # BASIC SERVER CONFIGURATION
     # ======================
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name _;
     
-    # Real IP configuration (konsisten)
+    # Real IP configuration
     set_real_ip_from 10.10.1.0/24;
     real_ip_header X-Forwarded-For;
     real_ip_recursive on;
     
     # ======================
-    # SECURITY HEADERS (KONSISTEN)
+    # SECURITY HEADERS
     # ======================
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
@@ -110,50 +110,49 @@ server {
     # FRAMEWORK-SPECIFIC CONFIG
     # ======================
     # Untuk Laravel
-    # root /var/www/laravel/public;
-    # index index.php index.html;
+    root /var/www/html/public;
+    index index.php index.html;
     
     # Untuk CodeIgniter
-    root /var/www/codeigniter;
-    index index.php index.html;
+    # root /var/www/html;
+    # index index.php index.html;
 
     # ======================
     # ROUTING RULES
     # ======================
     location / {
         # Untuk Laravel:
-        # try_files $uri $uri/ /index.php$is_args$args;
+        try_files $uri $uri/ /index.php$is_args$args;
         
         # Untuk CodeIgniter:
-        try_files $uri $uri/ /index.php?$query_string;
+        # try_files $uri $uri/ /index.php?$query_string;
     }
 
     # ======================
-    # PHP HANDLER (KONSISTEN)
+    # PHP HANDLER
     # ======================
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/run/php/php8.3-fpm.sock;
         
         # Untuk Laravel:
-        # fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        # fastcgi_param DOCUMENT_ROOT $realpath_root;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
         
         # Untuk CodeIgniter:
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        fastcgi_param PATH_INFO $fastcgi_path_info;
+        # fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        # fastcgi_param PATH_INFO $fastcgi_path_info;
         
         include fastcgi_params;
         fastcgi_hide_header X-Powered-By;
-        
-        # Performance settings (konsisten)
+
         fastcgi_buffer_size 128k;
         fastcgi_buffers 4 256k;
         fastcgi_busy_buffers_size 256k;
     }
 
     # ======================
-    # SECURITY RESTRICTIONS (KONSISTEN)
+    # SECURITY RESTRICTIONS
     # ======================
     # Blokir file/direktori sensitif framework
     location ~* ^/(\.env|\.git|storage/logs|bootstrap/cache|config/|database/|application|system|tests|composer\.(json|lock)) {
@@ -175,7 +174,7 @@ server {
     }
 
     # ======================
-    # STATIC FILES CACHING (KONSISTEN)
+    # STATIC FILES CACHING
     # ======================
     location ~* \.(?:ico|css|js|gif|jpe?g|png|svg|webp|woff2?|ttf|eot)$ {
         expires 365d;
@@ -185,7 +184,7 @@ server {
     }
 
     # ======================
-    # MISC CONFIG (KONSISTEN)
+    # MISC CONFIG
     # ======================
     client_max_body_size 100M;
     keepalive_timeout 15;
