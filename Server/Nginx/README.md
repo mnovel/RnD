@@ -89,11 +89,37 @@ server {
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name _;
-    
+
+    # Untuk SSL
+    # listen 443 ssl http2;
+    # listen [::]:443 ssl http2;
+    # server_name example.com www.example.com;
+
     # Real IP configuration
     set_real_ip_from 10.10.1.0/24;
     real_ip_header X-Forwarded-For;
     real_ip_recursive on;
+
+    # ======================
+    # SSL CERTIFICATE
+    # ======================
+    # ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+    # ssl_trusted_certificate /etc/letsencrypt/live/example.com/chain.pem;
+
+    # ======================
+    # SSL SETTINGS
+    # ======================
+    # ssl_protocols TLSv1.2 TLSv1.3;
+    # ssl_prefer_server_ciphers on;
+    # ssl_ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256';
+    # ssl_session_timeout 1d;
+    # ssl_session_cache shared:SSL:50m;
+    # ssl_session_tickets off;
+    # ssl_stapling on;
+    # ssl_stapling_verify on;
+    # resolver 1.1.1.1 1.0.0.1 valid=300s;
+    # resolver_timeout 5s;
     
     # ======================
     # SECURITY HEADERS
