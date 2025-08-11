@@ -79,7 +79,19 @@ sudo nano /etc/nginx/sites-available/default
 ```
 
 ### 4.2 Contoh konfigurasi `server` block:
+Config NGINX Untuk redirect HTTP ke HTTPS
+```nginx
+# ======================
+# REDIRECT HTTP → HTTPS
+# ======================
+server {
+    listen 80;
+    listen [::]:80;
+    server_name example.com www.example.com;
 
+    return 301 https://$host$request_uri;
+}
+```
 Config NGINX Untuk PHP
 ```nginx
 server {
