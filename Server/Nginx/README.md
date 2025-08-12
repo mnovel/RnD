@@ -115,9 +115,9 @@ server {
     # ======================
     # SSL CERTIFICATE
     # ======================
-    # ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;
-    # ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
-    # ssl_trusted_certificate /etc/letsencrypt/live/example.com/chain.pem;
+    # ssl_certificate     /etc/nginx/ssl/server.fullchain.crt;
+    # ssl_certificate_key /etc/nginx/ssl/server.key;
+    # ssl_trusted_certificate /etc/nginx/ssl/server.trusted.crt;
 
     # ======================
     # SSL SETTINGS
