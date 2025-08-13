@@ -54,6 +54,11 @@ sudo systemctl restart nfs-kernel-server
 sudo systemctl enable nfs-kernel-server
 ```
 
+### 1.5 Cek Daftar Export
+```bash
+showmount -e localhost
+```
+
 ---
 
 ## 💻 STEP 2: Konfigurasi NFS Client
