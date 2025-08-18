@@ -141,6 +141,7 @@ Untuk deployment **production** atau aplikasi kritis, pendekatan dengan `systemd
    Description=Mount NFS Share at /mnt/shared
    Requires=network-online.target
    After=network-online.target remote-fs-pre.target
+   Before=nginx.service apache2.service
 
    [Mount]
    What=192.168.1.10:/data/shared
