@@ -138,7 +138,7 @@ Untuk deployment **production** atau aplikasi kritis, pendekatan dengan `systemd
 
    ```ini
    [Unit]
-   Description=Mount NFS Share at /mnt/shared
+   Description=Mount NFS Share
    Requires=network-online.target
    After=network-online.target remote-fs-pre.target
    Before=nginx.service apache2.service
