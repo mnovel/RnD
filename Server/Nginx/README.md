@@ -79,7 +79,9 @@ sudo nano /etc/nginx/sites-available/default
 ```
 
 ### 4.2 Contoh konfigurasi `server` block:
+
 Config NGINX Untuk redirect HTTP ke HTTPS
+
 ```nginx
 # ======================
 # REDIRECT HTTP → HTTPS
@@ -92,7 +94,9 @@ server {
     return 301 https://$host$request_uri;
 }
 ```
+
 Config NGINX Untuk PHP
+
 ```nginx
 server {
     # ======================
@@ -238,7 +242,9 @@ server {
     }
 }
 ```
+
 Config NGINX Untuk NodeJs
+
 ```nginx
 server {
     listen 80 default_server;
@@ -286,6 +292,77 @@ server {
 ```
 
 > ⚠️ Ganti `php8.3-fpm.sock` sesuai versi PHP yang terinstal.
+
+### 4.3 Tambah blacklist Domain Referer (Otomatis)
+
+Untuk memblokir spam referer secara otomatis, kita akan menggunakan **map** dari Nginx yang di-generate lewat script cron.
+
+#### 4.3.1 Buat Script Generator Blacklist
+
+```bash
+sudo nano /usr/local/bin/update-nginx-blacklist.sh
+```
+
+Isi script:
+
+```bash
+#!/bin/bash
+set -e
+
+BLACKLIST_CONF="/etc/nginx/blacklist.conf"
+TMP_FILE=$(mktemp)
+
+# Ambil list referer spam dari repo resmi
+curl -s https://raw.githubusercontent.com/mnovel/RnD/refs/heads/main/Server/Nginx/blacklist.txt \
+| sed 's/^/~/' \
+| awk '{print $1" 1;"}' \
+| sed '1i map $http_referer $bad_referer { hostnames; default 0;' \
+| sed '$a }' > "$TMP_FILE"
+
+# Cek config nginx dulu sebelum overwrite
+if nginx -t -q; then
+    mv "$TMP_FILE" "$BLACKLIST_CONF"
+    nginx -t && systemctl reload nginx
+    echo "[OK] Blacklist updated & nginx reloaded."
+else
+    echo "[ERROR] Invalid nginx config. Blacklist not updated."
+    rm -f "$TMP_FILE"
+    exit 1
+fi
+```
+
+Kasih permission:
+
+```bash
+sudo chmod +x /usr/local/bin/update-nginx-blacklist.sh
+```
+
+
+#### 4.3.2 Integrasi dengan Nginx
+
+Edit konfigurasi server block (`/etc/nginx/sites-available/default`):
+
+```nginx
+include /etc/nginx/blacklist.conf;
+
+if ($bad_referer) {
+    return 403;
+}
+```
+
+#### 4.3.3 Tambah Cron Job
+
+Agar selalu update otomatis, jalankan script setiap hari jam 02:00 pagi:
+
+```bash
+sudo crontab -e
+```
+
+Isi dengan:
+
+```
+0 2 * * * /usr/local/bin/update-nginx-blacklist.sh >/dev/null 2>&1
+```
 
 ---
 
