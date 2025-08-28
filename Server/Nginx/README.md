@@ -312,14 +312,22 @@ set -e
 BLACKLIST_CONF="/etc/nginx/blacklist.conf"
 TMP_FILE=$(mktemp)
 
-# Ambil list referer spam dari repo resmi
 curl -s https://raw.githubusercontent.com/mnovel/RnD/refs/heads/main/Server/Nginx/blacklist.txt \
 | sed 's/^/~/' \
 | awk '{print $1" 1;"}' \
 | sed '1i map $http_referer $bad_referer { hostnames; default 0;' \
 | sed '$a }' > "$TMP_FILE"
 
-# Cek config nginx dulu sebelum overwrite
+if [ ! -f "$BLACKLIST_CONF" ]; then
+    echo "[INFO] $BLACKLIST_CONF tidak ditemukan, membuat baru dengan konfigurasi default..."
+    cat > "$BLACKLIST_CONF" <<EOF
+map \$http_referer \$bad_referer {
+    hostnames;
+    default 0;
+}
+EOF
+fi
+
 if nginx -t -q; then
     mv "$TMP_FILE" "$BLACKLIST_CONF"
     nginx -t && systemctl reload nginx
