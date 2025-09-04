@@ -106,7 +106,8 @@ sudo nano /etc/fstab
 Tambahkan baris berikut:
 
 ```
-192.168.1.10:/data/shared  /mnt/shared  nfs  defaults,_netdev,nofail,x-systemd.automount  0  0
+192.168.1.10:/data/shared  /mnt/shared  nfs  defaults,_netdev,nofail,x-systemd.automount,hard,timeo=600,retrans=5  0  0
+
 ```
 
 **Penjelasan opsi penting**:
@@ -147,7 +148,7 @@ Untuk deployment **production** atau aplikasi kritis, pendekatan dengan `systemd
    What=192.168.1.10:/data/shared
    Where=/mnt/shared
    Type=nfs
-   Options=_netdev,hard,timeo=600,retrans=3
+   Options=_netdev,bg,hard,timeo=600,retrans=5,x-systemd.automount
 
    [Install]
    WantedBy=multi-user.target
