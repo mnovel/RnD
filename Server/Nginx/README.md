@@ -158,8 +158,6 @@ server {
         base-uri 'self';
     " always;
 
-    " always;
-
     # ======================
     # FRAMEWORK-SPECIFIC CONFIG
     # ======================
