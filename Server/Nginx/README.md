@@ -150,9 +150,14 @@ server {
         default-src 'self' data: blob: https: http:;
         script-src 'self' 'unsafe-inline' https: http:;
         style-src 'self' 'unsafe-inline' https: http:;
-        img-src 'self' data: https: http:; font-src 'self' data: https: http:;
+        img-src 'self' data: https: http:;
+        font-src 'self' data: https: http:;
         connect-src 'self' https: http:;
+        object-src 'none';
         frame-ancestors 'self';
+        base-uri 'self';
+    " always;
+
     " always;
 
     # ======================
