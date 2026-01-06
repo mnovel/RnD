@@ -1,11 +1,3 @@
-# 📑 Panduan Instalasi & Konfigurasi **UFW (Uncomplicated Firewall)**
-
-Dokumentasi ini menjelaskan cara **instalasi, konfigurasi, dan validasi**
-**UFW (Uncomplicated Firewall)** pada **Ubuntu Server 22.04 / 24.04 LTS**
-untuk lingkungan **production / data center / enterprise**.
-
----
-
 ## 🧰 Prasyarat
 
 - OS : **Ubuntu Server 22.04 / 24.04 LTS**

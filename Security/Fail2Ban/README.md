@@ -1,8 +1,3 @@
-Berikut **`README.md — Fail2Ban`** yang **dibuat langsung dari template service** di atas dan **disesuaikan untuk Fail2Ban (production-ready)**.
-Gaya, struktur, dan level detail konsisten dengan dokumentasi RSyslog & OS yang sudah kamu buat.
-
----
-
 # 📑 Panduan Instalasi & Konfigurasi **Fail2Ban**
 
 Dokumentasi ini menjelaskan cara **instalasi, konfigurasi, dan hardening dasar**
