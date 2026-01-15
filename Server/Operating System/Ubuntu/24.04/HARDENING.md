@@ -9,7 +9,7 @@ Dokumen ini berisi **hardening dasar–menengah** untuk Ubuntu Server 24.04 (pro
 Edit konfigurasi SSH:
 
 ```bash
-sudo nano /etc/ssh/sshd_config
+sudo nano /etc/ssh/sshd_config.d/50-cloud-init.conf
 ```
 
 Pastikan:
