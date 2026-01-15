@@ -257,48 +257,120 @@ Config NGINX Untuk NodeJs
 
 ```nginx
 server {
+    # ======================
+    # BASIC SERVER CONFIG
+    # ======================
+    include /etc/nginx/mime.types;
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name _;
 
-    # Real IP Configuration
+    # ======================
+    # REAL IP CONFIG
+    # ======================
     set_real_ip_from 10.10.1.0/24;
     real_ip_header X-Forwarded-For;
     real_ip_recursive on;
 
-    # Basic Directives
-    root /var/www/myapp/build;
-    index index.html;
+    # ======================
+    # SSL CERTIFICATE
+    # ======================
+    # listen 443 ssl http2;
+    # listen [::]:443 ssl http2;
+    # ssl_certificate     /etc/nginx/ssl/server.fullchain.crt;
+    # ssl_certificate_key /etc/nginx/ssl/server.key;
+    # ssl_trusted_certificate /etc/nginx/ssl/server.trusted.crt;
 
-    # Security Headers
+    # ======================
+    # SSL SETTINGS
+    # ======================
+    # ssl_protocols TLSv1.2 TLSv1.3;
+    # ssl_prefer_server_ciphers on;
+
+    # ======================
+    # SECURITY HEADERS
+    # ======================
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), fullscreen=(self)" always;
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'self'; base-uri 'self';" always;
 
-    # Rewrite untuk SPA (Single Page Application)
+    add_header Content-Security-Policy "
+        default-src 'self' https: http: blob:;
+        script-src 'self' 'unsafe-inline' https: http:;
+        style-src 'self' 'unsafe-inline' https: http:;
+        img-src 'self' data: https: http: blob:;
+        font-src 'self' data: https: http:;
+        connect-src 'self' https: http:;
+        object-src 'none';
+        frame-ancestors 'self';
+        base-uri 'self';
+    " always;
+
+    # ======================
+    # DOCUMENT ROOT
+    # ======================
+    root /var/www/myapp/build;
+    index index.html;
+
+    # ======================
+    # ROUTING (SPA SUPPORT)
+    # ======================
     location / {
-        try_files $uri /index.html;
+        try_files $uri $uri/ /index.html;
     }
 
-    # Caching untuk static files
-    location ~* \.(?:ico|css|js|gif|jpe?g|png|woff2?|ttf|svg|eot|webp)$ {
+    # ======================
+    # STATIC FILE CACHING
+    # ======================
+    location ~* \.(?:ico|css|js|gif|jpe?g|png|svg|webp|woff2?|ttf|eot)$ {
         expires 365d;
         add_header Cache-Control "public, immutable";
         access_log off;
         try_files $uri =404;
     }
 
-    # Blok akses file tersembunyi dan sensitif
-    location ~ /\. {
+    # ======================
+    # SECURITY RESTRICTIONS
+    # ======================
+    # Blok file tersembunyi
+    location ~ /\.(?!well-known) {
         deny all;
         access_log off;
         log_not_found off;
     }
-}
 
+    # Blok file config & source map
+    location ~* \.(?:env|log|sql|bak|old|orig|map|ts)$ {
+        deny all;
+        return 403;
+    }
+
+    # ======================
+    # MIME TYPES
+    # ======================
+    types {
+        application/javascript mjs;
+    }
+
+    # ======================
+    # MISC
+    # ======================
+    client_max_body_size 100M;
+    keepalive_timeout 15;
+
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+    }
+
+    location = /robots.txt {
+        log_not_found off;
+        access_log off;
+    }
+}
 ```
 
 > ⚠️ Ganti `php8.3-fpm.sock` sesuai versi PHP yang terinstal.
