@@ -382,7 +382,7 @@ Untuk memblokir spam referer secara otomatis, kita akan menggunakan **map** dari
 #### 4.3.1 Buat Script Generator Blacklist
 
 ```bash
-sudo nano /usr/local/bin/update-nginx-blacklist.sh
+sudo nano /usr/local/bin/update-nginx-blacklist
 ```
 
 Isi script:
@@ -394,7 +394,7 @@ set -e
 BLACKLIST_CONF="/etc/nginx/blacklist.conf"
 TMP_FILE=$(mktemp)
 
-curl -s https://raw.githubusercontent.com/mnovel/RnD/refs/heads/main/Server/Nginx/blacklist.txt \
+curl -s https://raw.githubusercontent.com/mnovel/RnD/refs/heads/main/Server/Services/Nginx/blacklist.txt \
 | sed 's/^/~/' \
 | awk '{print $1" 1;"}' \
 | sed '1i map $http_referer $bad_referer { hostnames; default 0;' \
@@ -424,7 +424,7 @@ fi
 Kasih permission:
 
 ```bash
-sudo chmod +x /usr/local/bin/update-nginx-blacklist.sh
+sudo chmod +x /usr/local/bin/update-nginx-blacklist
 ```
 
 
