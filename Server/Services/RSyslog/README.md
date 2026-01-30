@@ -58,7 +58,7 @@ sudo systemctl restart rsyslog
 
 ---
 
-## 🖥️ STEP 2: Konfigurasi RSyslog **Server** (10.10.1.15)
+## 🖥️ STEP 2: Konfigurasi RSyslog **Server**)
 
 ### 2.1 Aktifkan penerimaan TCP
 
@@ -141,7 +141,7 @@ sudo systemctl restart rsyslog
 
 ---
 
-## 🖥️ STEP 3: Konfigurasi RSyslog **Client** (web-simrs-1)
+## 🖥️ STEP 3: Konfigurasi RSyslog **Client**
 
 ### 3.1 Pastikan NGINX menulis log ke file (default)
 
