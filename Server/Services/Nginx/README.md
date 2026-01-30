@@ -451,7 +451,7 @@ sudo crontab -e
 Isi dengan:
 
 ```
-0 2 * * * /usr/local/bin/update-nginx-blacklist.sh >/dev/null 2>&1
+0 2 * * * /usr/local/bin/update-nginx-blacklist >/dev/null 2>&1
 ```
 
 ---
