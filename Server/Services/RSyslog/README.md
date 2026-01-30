@@ -1,7 +1,8 @@
-# 📑 Panduan Instalasi & Konfigurasi RSyslog (Server & Client)
+# 📑 Panduan Instalasi & Konfigurasi RSyslog
 
-Dokumentasi ini menjelaskan cara setup **centralized logging** menggunakan **RSyslog** pada Ubuntu 24.04.
-Arsitektur ini memungkinkan semua server (client) mengirim log ke **server pusat** (10.10.1.15).
+## Centralized Logging (Server & Client) + NGINX (Tag-Based via imfile)
+
+Dokumentasi ini menjelaskan setup **centralized logging** menggunakan **RSyslog** pada **Ubuntu 24.04**, dengan pemisahan **NGINX access & error log** berbasis **TAG** menggunakan **imfile** di sisi client (tanpa mengubah `nginx.conf`).
 
 ---
 
@@ -10,30 +11,31 @@ Arsitektur ini memungkinkan semua server (client) mengirim log ke **server pusat
 * Ubuntu 24.04 LTS (Server & Client)
 * Akses `sudo`
 * Koneksi jaringan antar node
-* Firewall terbuka pada port **UDP/TCP 514**
+* Firewall terbuka pada **TCP 514**
+* Paket `rsyslog-modules` terpasang di **client** (untuk `imfile`)
 
 ---
 
 ## 🏗️ Arsitektur
 
 ```
-          +--------------------+
-          |   RSyslog Server   |
-          |   10.10.1.15       |
-          +--------------------+
-                   ^
-                   |
-    ---------------------------------
-    |               |               |
-+-----------+  +-----------+  +-----------+
-| Client 1  |  | Client 2  |  | Client N  |
-|10.10.1.20 |  |10.10.1.21 |  |10.10.1.x  |
-+-----------+  +-----------+  +-----------+
+          +-------------------------+
+          |   RSyslog Server        |
+          |   10.10.1.15            |
+          +-------------------------+
+                     ^
+                     |  TCP 514
+    -------------------------------------------
+    |                     |                   |
++-----------+       +-----------+       +-----------+
+| Client A  |       | Client B  |  ...  | Client N  |
+|           |       |           |       |           |
++-----------+       +-----------+       +-----------+
 ```
 
 ---
 
-## 🌐 STEP 1: Instalasi RSyslog
+## 🌐 STEP 1: Instalasi RSyslog (Server & Client)
 
 ### 1.1 Update sistem
 
@@ -47,58 +49,27 @@ sudo apt update && sudo apt upgrade -y
 sudo apt install rsyslog -y
 ```
 
-### 1.3 Pastikan service berjalan
+### 1.3 Aktifkan service
 
 ```bash
 sudo systemctl enable rsyslog
-sudo systemctl start rsyslog
-sudo systemctl status rsyslog
+sudo systemctl restart rsyslog
 ```
 
 ---
 
-## 🖥️ STEP 2: Konfigurasi RSyslog Server (10.10.1.15)
+## 🖥️ STEP 2: Konfigurasi RSyslog **Server** (10.10.1.15)
 
-### 2.1 Edit konfigurasi rsyslog
+### 2.1 Aktifkan penerimaan TCP
 
-```bash
-sudo nano /etc/rsyslog.conf
-```
+Edit `/etc/rsyslog.conf`:
 
-Aktifkan modul UDP & TCP (uncomment):
-
-```
-module(load="imudp")
-input(type="imudp" port="514")
-
+```conf
 module(load="imtcp")
 input(type="imtcp" port="514")
 ```
 
-### 2.2 Buat folder log untuk tiap client
-
-```bash
-sudo mkdir -p /var/log/rsyslog/web-simrs-1/nginx
-sudo mkdir -p /var/log/rsyslog/web-simrs-2/nginx
-```
-
-### 2.3 Buat konfigurasi custom
-
-```bash
-sudo nano /etc/rsyslog.d/01-custom.conf
-```
-
-Isi:
-
-```
-# Template simpan log per host & app
-template(name="PerHostLogs" type="string" string="/var/log/rsyslog/%HOSTNAME%/%PROGRAMNAME%.log")
-
-# Simpan semua log client
-*.* ?PerHostLogs
-```
-
-### 2.4 Restart service
+Restart:
 
 ```bash
 sudo systemctl restart rsyslog
@@ -106,38 +77,120 @@ sudo systemctl restart rsyslog
 
 ---
 
-## 🖥️ STEP 3: Konfigurasi RSyslog Client (10.10.1.20)
+### 2.2 Konfigurasi Template & Rules
 
-### 3.1 Edit konfigurasi default
+Buat file `/etc/rsyslog.d/01-custom.conf`:
+
+```conf
+############################
+# TEMPLATE
+############################
+
+template(name="AuthLogs" type="string"
+ string="/var/log/rsyslog/%HOSTNAME%/auth/%PROGRAMNAME%.log")
+
+template(name="NginxAccessLogs" type="string"
+ string="/var/log/rsyslog/%HOSTNAME%/nginx/access.log")
+
+template(name="NginxErrorLogs" type="string"
+ string="/var/log/rsyslog/%HOSTNAME%/nginx/error.log")
+
+template(name="SystemLogs" type="string"
+ string="/var/log/rsyslog/%HOSTNAME%/system/%PROGRAMNAME%.log")
+
+template(name="OtherLogs" type="string"
+ string="/var/log/rsyslog/%HOSTNAME%/other.log")
+
+############################
+# RULES
+############################
+
+# SSH & sudo
+if ($programname == 'sshd' or $programname == 'sudo') then {
+  action(type="omfile" dynaFile="AuthLogs" createDirs="on")
+  stop
+}
+
+# NGINX ACCESS (TAG-BASED)
+if ($programname == 'nginx_access') then {
+  action(type="omfile" dynaFile="NginxAccessLogs" createDirs="on")
+  stop
+}
+
+# NGINX ERROR (TAG-BASED)
+if ($programname == 'nginx_error') then {
+  action(type="omfile" dynaFile="NginxErrorLogs" createDirs="on")
+  stop
+}
+
+# Kernel & systemd
+if ($syslogfacility-text == 'kern' or $programname == 'systemd') then {
+  action(type="omfile" dynaFile="SystemLogs" createDirs="on")
+  stop
+}
+
+# Sisanya
+*.* action(type="omfile" dynaFile="OtherLogs" createDirs="on")
+```
+
+Restart:
 
 ```bash
-sudo nano /etc/rsyslog.d/50-default.conf
+sudo systemctl restart rsyslog
 ```
 
-Tambahkan di akhir file:
+---
 
+## 🖥️ STEP 3: Konfigurasi RSyslog **Client** (web-simrs-1)
+
+### 3.1 Pastikan NGINX menulis log ke file (default)
+
+```nginx
+access_log /var/log/nginx/access.log;
+error_log  /var/log/nginx/error.log;
 ```
-# Kirim semua log ke server (UDP & TCP)
-*.* @10.10.1.15:514
+
+> **Tidak perlu mengubah `nginx.conf` untuk syslog.**
+
+---
+
+### 3.2 Konfigurasi imfile untuk NGINX (TAG-BASED)
+
+Buat `/etc/rsyslog.d/30-nginx.conf`:
+
+```conf
+module(load="imfile")
+
+# NGINX ACCESS
+input(type="imfile"
+      File="/var/log/nginx/access.log"
+      Tag="nginx_access"
+      Severity="info"
+      Facility="local6"
+      PersistStateInterval="1")
+
+# NGINX ERROR
+input(type="imfile"
+      File="/var/log/nginx/error.log"
+      Tag="nginx_error"
+      Severity="error"
+      Facility="local6"
+      PersistStateInterval="1")
+```
+
+**Catatan:** `Tag` akan menjadi `$programname` di server.
+
+---
+
+### 3.3 Forward log ke server
+
+Pastikan `/etc/rsyslog.d/90-forward.conf`:
+
+```conf
 *.* @@10.10.1.15:514
 ```
 
-### 3.2 Tambah custom Nginx log
-
-```bash
-sudo nano /etc/rsyslog.d/30-nginx.conf
-```
-
-Isi:
-
-```
-# Kirim log Nginx access & error
-if ($programname == 'nginx') then {
-    action(type="omfwd" target="10.10.1.15" port="514" protocol="tcp")
-}
-```
-
-### 3.3 Restart service
+Restart:
 
 ```bash
 sudo systemctl restart rsyslog
@@ -145,71 +198,70 @@ sudo systemctl restart rsyslog
 
 ---
 
-## 📁 STEP 4: Verifikasi Log
-
-### 4.1 Dari sisi server
+### 3.4 Permission file log (WAJIB)
 
 ```bash
-ls -R /var/log/rsyslog/
+sudo chown root:adm /var/log/nginx/*.log
+sudo chmod 640 /var/log/nginx/*.log
 ```
 
-Contoh hasil:
+---
 
-```
-/var/log/rsyslog/web-simrs-1:
-syslog.log
-nginx.log
-auth.log
-```
+## 📁 STEP 4: Verifikasi
 
-### 4.2 Cek isi log
+### 4.1 Generate traffic
 
 ```bash
-tail -f /var/log/rsyslog/web-simrs-1/nginx.log
+curl http://localhost
+```
+
+### 4.2 Cek di server
+
+```bash
+ls -R /var/log/rsyslog/web-simrs-1/nginx
+```
+
+Hasil yang diharapkan:
+
+```
+access.log
+error.log
+```
+
+Tail:
+
+```bash
+tail -f /var/log/rsyslog/web-simrs-1/nginx/access.log
 ```
 
 ---
 
-## 🔐 STEP 5: Keamanan
+## 🔐 STEP 5: Firewall
 
-1. **Firewall (server)**
-   Buka port 514:
+**Server**:
 
-   ```bash
-   sudo ufw allow 514/tcp
-   sudo ufw allow 514/udp
-   ```
-
-2. **TLS/SSL (opsional)**
-   Bisa menggunakan `gtls` module pada rsyslog untuk enkripsi.
+```bash
+sudo ufw allow 514/tcp
+```
 
 ---
 
-## 📊 STEP 6: Integrasi SIEM / ELK
+## 🧪 STEP 6: Troubleshooting
 
-* Install **Filebeat** untuk forward log ke Elasticsearch
-* Atau integrasi langsung dengan **Graylog / Splunk**
+* Cek error rsyslog client:
 
----
+```bash
+journalctl -u rsyslog -n 50 --no-pager
+```
 
-## 🧪 STEP 7: Troubleshooting
+* Test TAG manual:
 
-* Cek error rsyslog:
+```bash
+logger -t nginx_access "TEST ACCESS"
+logger -t nginx_error "TEST ERROR"
+```
 
-  ```bash
-  journalctl -u rsyslog -f
-  ```
-* Test manual:
+* Catatan penting:
 
-  ```bash
-  logger "Test log from client"
-  ```
-
----
-
-## 📌 Catatan Tambahan
-
-* Gunakan **@@ (TCP)** untuk log penting → lebih andal.
-* Gunakan **@ (UDP)** untuk log ringan → lebih cepat, tapi tidak terjamin.
-* Struktur direktori bisa disesuaikan per aplikasi / per host.
-
+  * `imfile` hanya membaca **log baru** (setelah restart)
+  * Hindari `copytruncate` pada logrotate (gunakan `create`)
