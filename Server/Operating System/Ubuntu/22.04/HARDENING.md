@@ -1,6 +1,6 @@
 # HARDENING.md — Ubuntu Server 22.04 LTS
 
-Dokumen ini berisi **hardening dasar–menengah** untuk server produksi.
+Dokumen ini berisi hardening dasar–menengah untuk Ubuntu Server 22.04 (production-ready).
 
 ---
 
@@ -18,6 +18,8 @@ Pastikan:
 PermitRootLogin no
 PasswordAuthentication no
 PubkeyAuthentication yes
+X11Forwarding no
+AllowTcpForwarding no
 ```
 
 Restart SSH:
@@ -91,7 +93,68 @@ sudo dpkg-reconfigure unattended-upgrades
 
 ---
 
-## 6. Logging & Audit
+# 6. User & Password Policy Hardening
+
+## 6.1 Set Default Password Expiry (Global)
+
+Edit:
+
+```bash
+sudo nano /etc/login.defs
+```
+
+Pastikan:
+
+```
+PASS_MAX_DAYS   90
+PASS_MIN_DAYS   7
+PASS_WARN_AGE   7
+```
+
+Artinya:
+
+* Password expired 90 hari
+* Minimal 7 hari sebelum bisa diganti lagi
+* Warning 7 hari sebelum expired
+
+---
+
+## 6.2 Buat User Admin Non-Root
+
+```bash
+sudo adduser novel
+sudo usermod -aG sudo novel
+```
+
+---
+
+## 6.3 Paksa Ganti Password Saat Login Pertama
+
+```bash
+sudo chage -d 0 novel
+```
+
+---
+
+## 6.4 Setup SSH Key Login
+
+```bash
+sudo mkdir -p /home/novel/.ssh
+sudo touch /home/novel/.ssh/authorized_keys
+sudo chmod 700 /home/novel/.ssh
+sudo chmod 600 /home/novel/.ssh/authorized_keys
+sudo chown -R novel:novel /home/novel/.ssh
+```
+
+Masukkan public key:
+
+```bash
+sudo nano /home/novel/.ssh/authorized_keys
+```
+
+---
+
+## 7. Logging & Audit
 
 ```bash
 sudo apt install auditd audispd-plugins -y
@@ -100,11 +163,14 @@ sudo systemctl enable auditd
 
 ---
 
-## 7. Checklist Hardening
+## 8. Checklist Hardening
 
-- [x] SSH key only
-- [x] Firewall aktif
-- [x] Fail2Ban
-- [x] Kernel hardening
-- [x] Auto security update
-- [x] Audit logging
+* [x] SSH key only
+* [x] Firewall aktif
+* [x] Fail2Ban
+* [x] Kernel hardening
+* [x] Auto security update
+* [x] Audit logging
+* [x] Password expired 90 hari
+* [x] Non-root sudo user
+* [x] Force change password first login
