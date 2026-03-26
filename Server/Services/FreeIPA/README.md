@@ -148,6 +148,9 @@ cache_credentials = True
 override_homedir = /home/%u
 default_shell = /bin/bash
 sudo_provider = ipa
+entry_cache_timeout = 300
+sudo_cache_timeout = 60
+hbac_cache_timeout = 60
 
 [sssd]
 services = nss, pam
