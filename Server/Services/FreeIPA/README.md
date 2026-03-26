@@ -141,12 +141,13 @@ Cek `/etc/sssd/sssd.conf`:
 
 ```ini
 [domain/rsud.internal]
-id_provider = ipa
 auth_provider = ipa
+chpass_provider = ipa
 access_provider = ipa
 cache_credentials = True
 override_homedir = /home/%u
 default_shell = /bin/bash
+sudo_provider = ipa
 
 [sssd]
 services = nss, pam
