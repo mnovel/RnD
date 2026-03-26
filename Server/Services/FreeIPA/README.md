@@ -148,10 +148,11 @@ cache_credentials = True
 override_homedir = /home/%u
 default_shell = /bin/bash
 sudo_provider = ipa
+ldap_tls_cacert = /etc/ipa/ca.crt
+krb5_store_password_if_offline = True
 entry_cache_timeout = 300
 sudo_cache_timeout = 60
 hbac_cache_timeout = 60
-
 [sssd]
 services = nss, pam
 config_file_version = 2
