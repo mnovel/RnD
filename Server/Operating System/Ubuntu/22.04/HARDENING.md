@@ -15,7 +15,7 @@ sudo nano /etc/ssh/sshd_config.d/50-cloud-init.conf
 Pastikan:
 
 ```
-PermitRootLogin no
+PermitRootLogin yes
 PasswordAuthentication no
 PubkeyAuthentication yes
 X11Forwarding no
