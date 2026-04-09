@@ -95,6 +95,33 @@ server {
 }
 ```
 
+Config NGINX Untuk redirect Maintenance
+
+```nginx
+# ======================
+# MAINTENANCE MODE
+# ======================
+set $maintenance off;
+
+# Aktifkan jika file .maintenance ada
+if (-f $document_root/.maintenance) {
+    set $maintenance on;
+}
+
+# Jika maintenance aktif → return 503
+if ($maintenance = on) {
+    return 503;
+}
+
+# Custom halaman maintenance
+error_page 503 @maintenance;
+
+location @maintenance {
+    root /var/www/maintenance;
+    rewrite ^(.*)$ /index.html break;
+}
+```
+
 Config NGINX Untuk PHP
 
 ```nginx
