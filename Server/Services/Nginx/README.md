@@ -503,58 +503,141 @@ nano /var/www/maintenance/index.html
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Maintenance</title>
+  <title>Maintenance - UNIT IT</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
   <style>
     body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      text-align: center;
+      background: radial-gradient(circle at top left, #1e3a8a, #1e40af, #1d4ed8);
     }
-    .container {
-      max-width: 600px;
-      padding: 20px;
+
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.15);
     }
-    h1 {
-      font-size: 2.5em;
-      margin-bottom: 10px;
+
+    .glow {
+      box-shadow: 0 0 30px rgba(59,130,246,0.4);
     }
-    p {
-      font-size: 1.2em;
-      opacity: 0.9;
-    }
-    .logo {
-      font-size: 3em;
-      margin-bottom: 20px;
-    }
-    .footer {
-      margin-top: 30px;
-      font-size: 0.9em;
-      opacity: 0.7;
+
+    .pulse-slow {
+      animation: pulse 3s infinite;
     }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div class="logo">🛠️</div>
-    <h1>Website Sedang Maintenance</h1>
-    <p>
-      Mohon maaf atas ketidaknyamanannya.<br>
-      Sistem sedang dalam proses perbaikan / upgrade.
+
+<body class="min-h-screen flex items-center justify-center text-white">
+
+  <!-- Glow background -->
+  <div class="absolute w-[500px] h-[500px] bg-blue-500 opacity-20 blur-3xl rounded-full top-10 left-10"></div>
+  <div class="absolute w-[500px] h-[500px] bg-indigo-500 opacity-20 blur-3xl rounded-full bottom-10 right-10"></div>
+
+  <!-- Card -->
+  <div class="glass rounded-3xl p-10 max-w-lg w-full text-center shadow-2xl">
+
+    <!-- Logo -->
+    <img 
+      src="data:image/png;base64,asdasd"
+      class="mx-auto mb-6 max-h-24 drop-shadow-lg"
+    >
+
+    <h1 class="text-3xl font-bold mb-3 tracking-wide">
+      🚧 Maintenance System
+    </h1>
+
+    <p class="text-gray-200 text-sm mb-6">
+      Sistem sedang dalam proses peningkatan layanan.<br>
+      Mohon menunggu beberapa saat.
     </p>
-    <p>
-      Silakan kembali beberapa saat lagi.
-    </p>
-    <div class="footer">
-      &copy; 2026 - IT Support
+
+    <!-- Progress -->
+    <div class="w-full bg-white/20 rounded-full h-3 mb-3 overflow-hidden">
+      <div id="progressBar" class="bg-blue-400 h-3 glow transition-all duration-1000"></div>
     </div>
+
+    <p id="progressText" class="text-sm mb-2"></p>
+    <p id="eta" class="text-xs text-gray-300 mb-6"></p>
+
+    <!-- Countdown -->
+    <div class="flex justify-center gap-4 text-center mb-6">
+      <div>
+        <div id="hours" class="text-2xl font-bold">00</div>
+        <div class="text-xs text-gray-300">Jam</div>
+      </div>
+      <div>
+        <div id="minutes" class="text-2xl font-bold">00</div>
+        <div class="text-xs text-gray-300">Menit</div>
+      </div>
+      <div>
+        <div id="seconds" class="text-2xl font-bold">00</div>
+        <div class="text-xs text-gray-300">Detik</div>
+      </div>
+    </div>
+
+    <p class="text-xs text-gray-400 pulse-slow">
+      Halaman akan diperbarui otomatis
+    </p>
+
+    <div class="mt-4 text-xs text-gray-400">
+      © 2026 UNIT IT RSUD Dr. R Soedarsono
+    </div>
+
   </div>
+
+<script>
+  // WIB langsung
+  const startTime = new Date("2026-04-10T03:00:00+07:00");
+  const endTime   = new Date("2026-04-10T05:00:00+07:00");
+  
+  function updateUI() {
+    const now = new Date();
+
+    // Progress
+    const total = endTime - startTime;
+    const elapsed = now - startTime;
+    let percent = (elapsed / total) * 100;
+
+    if (percent < 0) percent = 0;
+    if (percent > 100) percent = 100;
+
+    document.getElementById("progressBar").style.width = percent + "%";
+    document.getElementById("progressText").innerText =
+      "Progress: " + Math.floor(percent) + "%";
+
+    // Countdown
+    let remaining = endTime - now;
+
+    if (remaining < 0) remaining = 0;
+
+    const h = Math.floor(remaining / (1000 * 60 * 60));
+    const m = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((remaining % (1000 * 60)) / 1000);
+
+    document.getElementById("hours").innerText = String(h).padStart(2,'0');
+    document.getElementById("minutes").innerText = String(m).padStart(2,'0');
+    document.getElementById("seconds").innerText = String(s).padStart(2,'0');
+
+    // ETA text
+    if (remaining > 0) {
+      const totalMinutes = Math.floor(remaining / 60000);
+    
+      document.getElementById("eta").innerText =
+        "Selesai dalam " + totalMinutes + " menit (pukul 05:00 WIB)";
+    } else {
+      document.getElementById("eta").innerText =
+        "Maintenance selesai, menunggu sistem online...";
+    }
+  }
+
+  setInterval(updateUI, 1000);
+  updateUI();
+
+  // Auto refresh
+  setTimeout(() => location.reload(), 30000);
+</script>
+
 </body>
 </html>
 ```
