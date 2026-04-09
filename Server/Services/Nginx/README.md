@@ -95,33 +95,6 @@ server {
 }
 ```
 
-Config NGINX Untuk redirect Maintenance
-
-```nginx
-# ======================
-# MAINTENANCE MODE
-# ======================
-set $maintenance off;
-
-# Aktifkan jika file .maintenance ada
-if (-f $document_root/.maintenance) {
-    set $maintenance on;
-}
-
-# Jika maintenance aktif → return 503
-if ($maintenance = on) {
-    return 503;
-}
-
-# Custom halaman maintenance
-error_page 503 @maintenance;
-
-location @maintenance {
-    root /var/www/maintenance;
-    rewrite ^(.*)$ /index.html break;
-}
-```
-
 Config NGINX Untuk PHP
 
 ```nginx
@@ -479,6 +452,111 @@ Isi dengan:
 
 ```
 0 2 * * * /usr/local/bin/update-nginx-blacklist >/dev/null 2>&1
+```
+
+---
+
+### 4.4 Mode Maintenance
+
+#### 4.4.1 Tambahkan Config NGINX Untuk redirect Maintenance
+
+```nginx
+# ======================
+# MAINTENANCE MODE
+# ======================
+set $maintenance off;
+
+# Aktifkan jika file .maintenance ada
+if (-f $document_root/.maintenance) {
+    set $maintenance on;
+}
+
+# Jika maintenance aktif → return 503
+if ($maintenance = on) {
+    return 503;
+}
+
+# Custom halaman maintenance
+error_page 503 @maintenance;
+
+location @maintenance {
+    root /var/www/maintenance;
+    rewrite ^(.*)$ /index.html break;
+}
+```
+
+#### 4.4.2 Buat file .maintenance
+
+```bash
+touch /var/www/html/.maintenance
+```
+
+#### 4.4.3 Buat tampilan halaman maintenance
+```bash
+mkdir -p /var/www/maintenance
+nano /var/www/maintenance/index.html
+```
+
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    .container {
+      max-width: 600px;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+    p {
+      font-size: 1.2em;
+      opacity: 0.9;
+    }
+    .logo {
+      font-size: 3em;
+      margin-bottom: 20px;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 0.9em;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">🛠️</div>
+    <h1>Website Sedang Maintenance</h1>
+    <p>
+      Mohon maaf atas ketidaknyamanannya.<br>
+      Sistem sedang dalam proses perbaikan / upgrade.
+    </p>
+    <p>
+      Silakan kembali beberapa saat lagi.
+    </p>
+    <div class="footer">
+      &copy; 2026 - IT Support
+    </div>
+  </div>
+</body>
+</html>
 ```
 
 ---
