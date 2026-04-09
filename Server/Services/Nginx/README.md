@@ -461,28 +461,44 @@ Isi dengan:
 #### 4.4.1 Tambahkan Config NGINX Untuk redirect Maintenance
 
 ```nginx
-# ======================
-# MAINTENANCE MODE
-# ======================
-set $maintenance off;
-
-# Aktifkan jika file .maintenance ada
-if (-f $document_root/.maintenance) {
-    set $maintenance on;
-}
-
-# Jika maintenance aktif → return 503
-if ($maintenance = on) {
-    return 503;
-}
-
-# Custom halaman maintenance
-error_page 503 @maintenance;
-
-location @maintenance {
-    root /var/www/maintenance;
-    rewrite ^(.*)$ /index.html break;
-}
+    # ======================
+    # MAINTENANCE MODE
+    # ======================
+    
+    set $maintenance off;
+    
+    # Aktif jika file .maintenance ada
+    if (-f $document_root/.maintenance) {
+        set $maintenance on;
+    }
+    
+    # Whitelist IP (tidak kena maintenance)
+    set $allow_ip 0;
+    
+    if ($remote_addr = 10.10.1.16) {
+        set $allow_ip 1;
+    }
+    
+    # Jika maintenance aktif DAN bukan IP whitelist → 503
+    if ($maintenance = on) {
+        set $block 1;
+    }
+    
+    if ($allow_ip = 1) {
+        set $block 0;
+    }
+    
+    if ($block = 1) {
+        return 503;
+    }
+    
+    # Custom halaman maintenance
+    error_page 503 @maintenance;
+    
+    location @maintenance {
+        root /var/www/maintenance;
+        rewrite ^ /index.html break;
+    }
 ```
 
 #### 4.4.2 Buat file .maintenance
