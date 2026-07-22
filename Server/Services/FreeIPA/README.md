@@ -123,7 +123,9 @@ sudo apt install freeipa-client -y
 ### 3.3 Join Client ke FreeIPA Server
 
 ```bash
-sudo ipa-client-install --mkhomedir
+sudo ipa-client-install \
+    --mkhomedir \
+    --enable-dns-updates
 ```
 
 > Pilihan `--mkhomedir` membuat **home directory otomatis** saat user login.
