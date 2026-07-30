@@ -509,6 +509,8 @@ services:
 
     command:
       - '--path.rootfs=/host'
+      - '--collector.systemd'
+      - '--collector.processes'
 
     pid: host
 
