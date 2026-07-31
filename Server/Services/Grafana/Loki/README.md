@@ -1,76 +1,52 @@
 # 📑 Panduan Instalasi & Konfigurasi Grafana + Loki + Promtail (Docker Compose)
 
-Dokumentasi ini menjelaskan proses instalasi, konfigurasi, dan validasi **Grafana, Loki, dan Promtail** menggunakan **Docker Compose** pada **Ubuntu Server 24.04 LTS** untuk lingkungan **production**.
+Dokumentasi ini menjelaskan proses **instalasi, konfigurasi, dan validasi Grafana, Loki, dan Promtail** menggunakan **Docker Compose** pada **Ubuntu Server 24.04 LTS** untuk lingkungan **production / data center / enterprise**.
 
 ---
 
 # 🖥️ BAGIAN 1 — HOST (Grafana + Loki)
 
-Host berfungsi sebagai **server monitoring** sekaligus **log aggregation server**.
+Host berfungsi sebagai **server monitoring** sekaligus **log aggregation server** yang menerima log dari seluruh agent menggunakan Promtail, menyimpannya di Loki, kemudian divisualisasikan melalui Grafana.
 
 ---
 
 ## 🧰 Prasyarat
 
-* Ubuntu Server 24.04 LTS
-* Docker Engine
-* Docker Compose Plugin
-* Hak akses `sudo`
-* Port yang digunakan:
-
-  * **3000/TCP** (Grafana)
-  * **3100/TCP** (Loki)
+- OS : **Ubuntu Server 24.04 LTS**
+- Docker Engine dan Docker Compose Plugin **sudah terpasang**
+- Hak akses `sudo`
+- Koneksi jaringan antara Host dan Agent
+- Port yang digunakan:
+  - **3000/TCP** (Grafana)
+  - **3100/TCP** (Loki)
 
 ---
 
 ## 🏗️ Arsitektur
 
 ```text
-                +----------------------+
-                |      GRAFANA         |
-                |      Port 3000       |
-                +----------+-----------+
-                           |
-                           |
-                +----------v-----------+
-                |        LOKI          |
-                |      Port 3100       |
-                +----------+-----------+
-                           ^
-                           |
-          ------------------------------------------
-          |                  |                     |
-+----------------+  +----------------+  +----------------+
-| Promtail Node1 |  | Promtail Node2 |  | Promtail NodeN |
-+----------------+  +----------------+  +----------------+
+                 +----------------------+
+                 |      GRAFANA         |
+                 |      Port 3000       |
+                 +----------+-----------+
+                            |
+                            |
+                 +----------v-----------+
+                 |        LOKI          |
+                 |      Port 3100       |
+                 +----------+-----------+
+                            ^
+                            |
+        -----------------------------------------------
+        |                   |                         |
++----------------+  +----------------+      +----------------+
+| Promtail Node1 |  | Promtail Node2 |  ... | Promtail NodeN |
++----------------+  +----------------+      +----------------+
 ```
 
 ---
 
-# 🌐 STEP 1 : Install Docker
-
-```bash
-sudo apt update
-sudo apt install docker.io docker-compose-v2 -y
-```
-
-Enable Docker
-
-```bash
-sudo systemctl enable docker
-sudo systemctl start docker
-```
-
-Verifikasi
-
-```bash
-docker --version
-docker compose version
-```
-
----
-
-# 🌐 STEP 2 : Membuat Direktori
+# 🌐 STEP 1 : Membuat Direktori
 
 ```bash
 mkdir -p ~/grafana-loki/loki
@@ -80,15 +56,15 @@ cd ~/grafana-loki
 
 ---
 
-# 🌐 STEP 3 : Konfigurasi Loki
+# 🌐 STEP 2 : Konfigurasi Loki
 
-Buat file
+Buat file konfigurasi.
 
 ```bash
 nano loki/config.yaml
 ```
 
-Isi konfigurasi dasar
+Isi file:
 
 ```yaml
 auth_enabled: false
@@ -122,13 +98,15 @@ ruler:
 
 ---
 
-# 🌐 STEP 4 : Docker Compose
+# 🌐 STEP 3 : Membuat Docker Compose
 
-Buat file
+Buat file:
 
 ```bash
 nano docker-compose.yml
 ```
+
+Isi file:
 
 ```yaml
 version: "3.9"
@@ -153,18 +131,17 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
-
     restart: unless-stopped
 
     ports:
       - "3000:3000"
 
-    volumes:
-      - grafana-data:/var/lib/grafana
-
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+
+    volumes:
+      - grafana-data:/var/lib/grafana
 
 volumes:
   loki-data:
@@ -173,13 +150,13 @@ volumes:
 
 ---
 
-# 🌐 STEP 5 : Menjalankan Container
+# 🌐 STEP 4 : Menjalankan Container
 
 ```bash
 docker compose up -d
 ```
 
-Verifikasi
+Verifikasi container.
 
 ```bash
 docker ps
@@ -187,22 +164,22 @@ docker ps
 
 ---
 
-# 🌐 STEP 6 : Konfigurasi Grafana
+# 🌐 STEP 5 : Konfigurasi Grafana
 
-Buka
+Akses Grafana melalui browser.
 
 ```
 http://IP_SERVER:3000
 ```
 
-Login
+Login menggunakan akun bawaan.
 
 ```
-admin
-admin
+Username : admin
+Password : admin
 ```
 
-Tambah Data Source
+Tambahkan **Data Source**.
 
 ```
 Connections
@@ -210,48 +187,43 @@ Connections
 → Loki
 ```
 
-URL
+Masukkan URL berikut.
 
 ```
 http://loki:3100
 ```
 
-Klik
-
-```
-Save & Test
-```
+Kemudian klik **Save & Test**.
 
 ---
 
-# 📁 STEP 7 : Struktur Direktori
+# 📁 STEP 6 : Struktur Direktori
 
 ```text
 grafana-loki/
-
 ├── docker-compose.yml
-
 ├── grafana/
-
-├── loki/
-│   └── config.yaml
+└── loki/
+    └── config.yaml
 ```
 
 ---
 
-# ✅ STEP 8 : Validasi
+# ✅ STEP 7 : Validasi
+
+Melihat status container.
 
 ```bash
 docker ps
 ```
 
-Cek Loki
+Memastikan Loki siap menerima koneksi.
 
 ```bash
 curl http://localhost:3100/ready
 ```
 
-Output
+Output yang diharapkan.
 
 ```
 ready
@@ -259,18 +231,53 @@ ready
 
 ---
 
+# 🔐 STEP 8 : Keamanan
+
+- Batasi akses port **3000** dan **3100** menggunakan firewall.
+- Gunakan HTTPS melalui Reverse Proxy (Nginx atau Traefik).
+- Ganti username dan password bawaan Grafana.
+- Gunakan Docker Volume untuk penyimpanan persisten.
+- Lakukan backup volume Grafana dan Loki secara berkala.
+
+---
+
+# 📊 STEP 9 : Monitoring & Logging
+
+Melihat status container.
+
+```bash
+docker ps
+```
+
+Log Grafana.
+
+```bash
+docker logs -f grafana
+```
+
+Log Loki.
+
+```bash
+docker logs -f loki
+```
+
+---
+
+---
+
 # 💻 BAGIAN 2 — AGENT (Promtail)
 
-Promtail membaca log lokal kemudian mengirimkannya ke Loki.
+Promtail bertugas membaca log pada server kemudian mengirimkannya ke Loki.
 
 ---
 
 ## 🧰 Prasyarat
 
-* Docker Engine
-* Docker Compose
-* Akses ke Host Loki
-* Port 3100 dapat diakses
+- Ubuntu Server 24.04 LTS
+- Docker Engine dan Docker Compose Plugin **sudah terpasang**
+- Hak akses `sudo`
+- Dapat mengakses Host Loki
+- Port **3100/TCP** dapat dijangkau
 
 ---
 
@@ -285,9 +292,13 @@ cd ~/promtail
 
 # 🌐 STEP 2 : Konfigurasi Promtail
 
+Buat file konfigurasi.
+
 ```bash
 nano config.yaml
 ```
+
+Isi file.
 
 ```yaml
 server:
@@ -314,13 +325,19 @@ scrape_configs:
       __path__: /var/log/*.log
 ```
 
+> Ganti **IP_SERVER** dengan alamat IP Host yang menjalankan Loki.
+
 ---
 
-# 🌐 STEP 3 : Docker Compose
+# 🌐 STEP 3 : Membuat Docker Compose
+
+Buat file.
 
 ```bash
 nano docker-compose.yml
 ```
+
+Isi file.
 
 ```yaml
 version: "3.9"
@@ -328,29 +345,22 @@ version: "3.9"
 services:
 
   promtail:
-
     image: grafana/promtail:latest
-
     container_name: promtail
-
     restart: unless-stopped
 
-    volumes:
-
-      - ./config.yaml:/etc/promtail/config.yaml
-
-      - /var/log:/var/log:ro
-
-      - /etc/machine-id:/etc/machine-id:ro
-
     command:
-
       - -config.file=/etc/promtail/config.yaml
+
+    volumes:
+      - ./config.yaml:/etc/promtail/config.yaml
+      - /var/log:/var/log:ro
+      - /etc/machine-id:/etc/machine-id:ro
 ```
 
 ---
 
-# 🌐 STEP 4 : Menjalankan Promtail
+# 🌐 STEP 4 : Menjalankan Container
 
 ```bash
 docker compose up -d
@@ -360,76 +370,98 @@ docker compose up -d
 
 # 🌐 STEP 5 : Validasi
 
-Container
+Melihat status container.
 
 ```bash
 docker ps
 ```
 
-Log
+Melihat log Promtail.
 
 ```bash
 docker logs -f promtail
 ```
 
-Tes koneksi
+Menguji koneksi ke Loki.
 
 ```bash
 curl http://IP_SERVER:3100/ready
+```
+
+Output yang diharapkan.
+
+```
+ready
 ```
 
 ---
 
 # 🌐 STEP 6 : Verifikasi di Grafana
 
-Masuk ke menu:
+Masuk ke menu.
 
 ```
 Explore
 ```
 
-Pilih **Loki** kemudian jalankan query:
+Pilih **Loki** kemudian jalankan query berikut.
 
 ```logql
 {job="syslog"}
 ```
 
-Jika log muncul, maka Promtail berhasil mengirimkan log ke Loki.
+Apabila log berhasil ditampilkan, maka Promtail telah berhasil mengirimkan log ke Loki.
 
 ---
 
 # 🔐 STEP 7 : Keamanan
 
-* Batasi akses port **3000** dan **3100** menggunakan firewall.
-* Gunakan *reverse proxy* (Nginx atau Traefik) dengan HTTPS untuk akses Grafana pada lingkungan produksi.
-* Ganti kredensial bawaan Grafana (`admin/admin`) setelah instalasi.
-* Gunakan *Docker volumes* untuk menyimpan data Grafana dan Loki secara persisten.
-* Lakukan pencadangan (*backup*) terhadap volume dan berkas konfigurasi secara berkala.
+- Batasi akses Promtail hanya ke Host Loki.
+- Gunakan jaringan internal (*private network*) apabila memungkinkan.
+- Terapkan firewall pada Host dan Agent.
+- Jalankan container menggunakan user non-root apabila diperlukan.
+- Lakukan backup konfigurasi Promtail.
 
 ---
 
 # 📊 STEP 8 : Monitoring & Logging
 
-Melihat status container:
+Melihat status container.
 
 ```bash
 docker ps
 ```
 
-Melihat log Grafana:
-
-```bash
-docker logs -f grafana
-```
-
-Melihat log Loki:
-
-```bash
-docker logs -f loki
-```
-
-Melihat log Promtail:
+Melihat log Promtail.
 
 ```bash
 docker logs -f promtail
 ```
+
+---
+
+# 🧪 Troubleshooting
+
+| Masalah | Penyebab | Solusi |
+|----------|----------|---------|
+| Grafana tidak dapat terhubung ke Loki | URL Data Source salah | Pastikan URL menggunakan `http://loki:3100` |
+| Loki tidak berjalan | Konfigurasi salah | Periksa `config.yaml` dan jalankan `docker logs loki` |
+| Promtail gagal mengirim log | IP atau port Loki salah | Periksa parameter `clients.url` |
+| Log tidak muncul di Grafana | Path log tidak sesuai | Periksa nilai `__path__` pada `config.yaml` |
+| Container berhenti (*Exited*) | Kesalahan konfigurasi | Jalankan `docker logs <container>` untuk melihat penyebab |
+
+---
+
+# 📌 Catatan Penting
+
+> ⚠️ Seluruh perubahan konfigurasi disarankan diuji terlebih dahulu pada lingkungan **staging** sebelum diterapkan ke lingkungan **production**. Setelah implementasi selesai, lakukan backup terhadap file konfigurasi dan Docker Volume secara berkala untuk menjaga ketersediaan data.
+
+---
+
+# 📎 Referensi
+
+- Grafana Documentation
+- Loki Documentation
+- Promtail Documentation
+- Grafana Labs Best Practices
+- CIS Ubuntu Benchmark
