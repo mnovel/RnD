@@ -118,15 +118,30 @@ services:
     container_name: loki
     restart: unless-stopped
 
+    command:
+      - -config.file=/etc/loki/config.yaml
+
     ports:
       - "3100:3100"
 
     volumes:
-      - ./loki/config.yaml:/etc/loki/config.yaml
-      - loki-data:/loki
+      - ./loki/config.yaml:/etc/loki/config.yaml:ro
+      - loki_data:/loki
 
-    command:
-      - -config.file=/etc/loki/config.yaml
+    networks:
+      - monitoring
+
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --spider
+        - -q
+        - http://localhost:3100/ready
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   grafana:
     image: grafana/grafana:latest
@@ -137,15 +152,39 @@ services:
       - "3000:3000"
 
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: CHANGE_THIS_STRONG_PASSWORD
+      GF_USERS_ALLOW_SIGN_UP: "false"
 
     volumes:
-      - grafana-data:/var/lib/grafana
+      - grafana_data:/var/lib/grafana
+
+    depends_on:
+      loki:
+        condition: service_healthy
+
+    networks:
+      - monitoring
+
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --spider
+        - -q
+        - http://localhost:3000/api/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 volumes:
-  loki-data:
-  grafana-data:
+  loki_data:
+  grafana_data:
+
+networks:
+  monitoring:
+    driver: bridge
 ```
 
 ---
