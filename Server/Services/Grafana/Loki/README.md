@@ -49,9 +49,9 @@ Host berfungsi sebagai **server monitoring** sekaligus **log aggregation server*
 # 🌐 STEP 1 : Membuat Direktori
 
 ```bash
-mkdir -p ~/grafana-loki/loki
-mkdir -p ~/grafana-loki/grafana
-cd ~/grafana-loki
+mkdir -p /opt/monitoring/loki
+mkdir -p /opt/monitoring/grafana
+cd /opt/monitoring
 ```
 
 ---
@@ -61,7 +61,7 @@ cd ~/grafana-loki
 Buat file konfigurasi.
 
 ```bash
-nano loki/config.yaml
+nano loki/loki.yaml
 ```
 
 Isi file:
@@ -71,9 +71,24 @@ auth_enabled: false
 
 server:
   http_listen_port: 3100
+  grpc_listen_port: 9095
+
 
 common:
+  instance_addr: 127.0.0.1
   path_prefix: /loki
+
+  replication_factor: 1
+
+  ring:
+    kvstore:
+      store: inmemory
+
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+
 
 schema_config:
   configs:
@@ -85,15 +100,29 @@ schema_config:
         prefix: index_
         period: 24h
 
+
 storage_config:
+  tsdb_shipper:
+    active_index_directory: /loki/index
+    cache_location: /loki/cache
+
   filesystem:
     directory: /loki/chunks
 
+
 limits_config:
   allow_structured_metadata: false
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
 
-ruler:
-  alertmanager_url: http://localhost:9093
+
+compactor:
+  working_directory: /loki/compactor
+  retention_enabled: true
+
+
+analytics:
+  reporting_enabled: false
 ```
 
 ---
@@ -119,13 +148,13 @@ services:
     restart: unless-stopped
 
     command:
-      - -config.file=/etc/loki/config.yaml
+      - -config.file=/etc/loki/loki.yml
 
     ports:
       - "3100:3100"
 
     volumes:
-      - ./loki/config.yaml:/etc/loki/config.yaml:ro
+      - ./loki/loki.yml:/etc/loki/loki.yml:ro
       - loki_data:/loki
 
     networks:
