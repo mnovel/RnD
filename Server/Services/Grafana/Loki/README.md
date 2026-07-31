@@ -429,7 +429,7 @@ cd /opt/promtail
 Buat file konfigurasi.
 
 ```bash
-nano promtail.yaml
+nano promtail.yml
 ```
 
 Isi file.
@@ -484,10 +484,10 @@ services:
     restart: unless-stopped
 
     command:
-      - -config.file=/etc/promtail/promtail.yml
+      - '-config.file=/etc/promtail/promtail.yml'
 
     volumes:
-      - ./config.yaml:/etc/promtail/promtail.yml
+      - ./promtail.yml:/etc/promtail/promtail.yml
       - /var/log:/var/log:ro
       - /etc/machine-id:/etc/machine-id:ro
 ```
