@@ -61,13 +61,14 @@ cd /opt/monitoring
 Buat file konfigurasi.
 
 ```bash
-nano loki/loki.yaml
+nano loki/loki.yml
 ```
 
 Isi file:
 
 ```yaml
 auth_enabled: false
+
 
 server:
   http_listen_port: 3100
@@ -96,12 +97,14 @@ schema_config:
       store: tsdb
       object_store: filesystem
       schema: v13
+
       index:
         prefix: index_
         period: 24h
 
 
 storage_config:
+
   tsdb_shipper:
     active_index_directory: /loki/index
     cache_location: /loki/cache
@@ -111,17 +114,20 @@ storage_config:
 
 
 limits_config:
+
   allow_structured_metadata: false
+
   reject_old_samples: true
   reject_old_samples_max_age: 168h
 
 
 compactor:
+
   working_directory: /loki/compactor
-  retention_enabled: true
 
 
 analytics:
+
   reporting_enabled: false
 ```
 
@@ -138,8 +144,6 @@ nano docker-compose.yml
 Isi file:
 
 ```yaml
-version: "3.9"
-
 services:
 
   loki:
@@ -162,15 +166,45 @@ services:
 
     healthcheck:
       test:
+        - CMD-SHELL
+        - wget -qO- http://127.0.0.1:3100/ready | grep -q ready
+
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=90d'
+      - '--web.enable-lifecycle'
+
+    ports:
+      - "9090:9090"
+
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+
+    networks:
+      - monitoring
+
+    healthcheck:
+      test:
         - CMD
         - wget
         - --spider
         - -q
-        - http://localhost:3100/ready
+        - http://localhost:9090/-/healthy
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 20s
 
   grafana:
     image: grafana/grafana:latest
@@ -182,15 +216,24 @@ services:
 
     environment:
       GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: CHANGE_THIS_STRONG_PASSWORD
+      GF_SECURITY_ADMIN_PASSWORD: "juM85i0#"
       GF_USERS_ALLOW_SIGN_UP: "false"
+
+      # Image Renderer
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+      GF_RENDERING_RENDERER_TOKEN: "8b4f8a6d3c2e1f9a7b5d4c6e8f1a9b2c"
+      GF_RENDERING_CONCURRENT_RENDER_REQUEST_LIMIT: "10"
 
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
 
     depends_on:
-      loki:
+      prometheus:
         condition: service_healthy
+      renderer:
+        condition: service_started
 
     networks:
       - monitoring
@@ -205,10 +248,33 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+
+  renderer:
+    image: grafana/grafana-image-renderer:latest
+    container_name: grafana-image-renderer
+    restart: unless-stopped
+
+    environment:
+      AUTH_TOKEN: "8b4f8a6d3c2e1f9a7b5d4c6e8f1a9b2c"
+      ENABLE_METRICS: "true"
+
+    networks:
+      - monitoring
+
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --spider
+        - -q
+        - http://localhost:8081/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   loki_data:
+  prometheus_data:
   grafana_data:
 
 networks:
