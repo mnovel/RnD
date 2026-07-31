@@ -148,7 +148,7 @@ services:
     restart: unless-stopped
 
     command:
-      - -config.file=/etc/loki/loki.yml
+      - '-config.file=/etc/loki/loki.yml'
 
     ports:
       - "3100:3100"
@@ -352,8 +352,8 @@ Promtail bertugas membaca log pada server kemudian mengirimkannya ke Loki.
 # 🌐 STEP 1 : Membuat Direktori
 
 ```bash
-mkdir -p ~/promtail
-cd ~/promtail
+mkdir -p /opt/promtail
+cd /opt/promtail
 ```
 
 ---
@@ -363,7 +363,7 @@ cd ~/promtail
 Buat file konfigurasi.
 
 ```bash
-nano config.yaml
+nano promtail.yaml
 ```
 
 Isi file.
@@ -418,10 +418,10 @@ services:
     restart: unless-stopped
 
     command:
-      - -config.file=/etc/promtail/config.yaml
+      - -config.file=/etc/promtail/promtail.yml
 
     volumes:
-      - ./config.yaml:/etc/promtail/config.yaml
+      - ./config.yaml:/etc/promtail/promtail.yml
       - /var/log:/var/log:ro
       - /etc/machine-id:/etc/machine-id:ro
 ```
