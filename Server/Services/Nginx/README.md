@@ -80,18 +80,19 @@ sudo nano /etc/nginx/sites-available/default
 
 ### 4.2 Contoh konfigurasi `server` block:
 
-Config NGINX Untuk redirect HTTP ke HTTPS
+Config NGINX Untuk redirect IP HTTP ke Domain HTTPS
 
 ```nginx
 # ======================
 # REDIRECT HTTP → HTTPS
 # ======================
 server {
-    listen 80;
-    listen [::]:80;
-    server_name example.com www.example.com;
+    listen 80 default_server;
+    listen [::]:80 default_server;
 
-    return 301 https://$host$request_uri;
+    server_name _;
+
+    return 301 https://example.com$request_uri;
 }
 ```
 
