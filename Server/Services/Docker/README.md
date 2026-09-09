@@ -35,6 +35,7 @@ Gunakan script resmi Docker untuk instalasi otomatis.
 
 ```bash
 curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
 ```
 
 ---
