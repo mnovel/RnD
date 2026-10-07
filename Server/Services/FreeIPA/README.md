@@ -38,7 +38,7 @@ Dokumentasi ini menjelaskan setup **FreeIPA** sebagai **Identity Management / Ce
 ```text
           +-------------------------+
           |   FreeIPA Server        |
-          | rocky9-ipa.rsud.internal|
+          | ipa.rsud.internal|
           | 10.10.1.10             |
           +-------------------------+
                      ^
@@ -141,7 +141,7 @@ sudo systemctl enable --now chrony
 
 # Arahkan ke server IPA sebagai sumber waktu
 sudo tee /etc/chrony/chrony.conf >/dev/null <<'EOF'
-server rocky9-ipa.rsud.internal iburst
+server ipa.rsud.internal iburst
 driftfile /var/lib/chrony/chrony.drift
 makestep 1.0 3
 rtcsync
@@ -162,7 +162,7 @@ hostname -f
 # Contoh output: sehat.rsud.internal
 
 # Server IPA harus resolve
-getent hosts rocky9-ipa.rsud.internal
+getent hosts ipa.rsud.internal
 
 # DNS resolver harus mengarah ke server IPA (atau DNS yang forward ke IPA)
 cat /etc/resolv.conf
@@ -189,11 +189,11 @@ sudo ipa-client-install \
     --mkhomedir \
     --enable-dns-updates \
     --domain=rsud.internal \
-    --server=rocky9-ipa.rsud.internal \
+    --server=ipa.rsud.internal \
     --realm=RSUD.INTERNAL \
     --principal=admin \
     --hostname=$(hostname -f) \
-    --ntp-server=rocky9-ipa.rsud.internal \
+    --ntp-server=ipa.rsud.internal \
     --force-join
 ```
 
@@ -217,7 +217,7 @@ Cek `/etc/sssd/sssd.conf`:
 ```ini
 [domain/rsud.internal]
 id_provider = ipa
-ipa_server = _srv_, rocky9-ipa.rsud.internal
+ipa_server = _srv_, ipa.rsud.internal
 ipa_domain = rsud.internal
 ipa_hostname = sehat.rsud.internal
 auth_provider = ipa
@@ -394,7 +394,7 @@ Penyebab paling umum:
 
 1. **Port firewall client belum dibuka** → cek STEP 3.1
 2. **Waktu tidak sinkron** → cek `chronyc sources`
-3. **DNS tidak resolve** → cek `getent hosts rocky9-ipa.rsud.internal`
+3. **DNS tidak resolve** → cek `getent hosts ipa.rsud.internal`
 4. **Password admin salah/kedaluwarsa**
 5. **Sisa state dari instalasi gagal sebelumnya**
 
